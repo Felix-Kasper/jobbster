@@ -1,0 +1,8 @@
+# Minimale Supabase-Konfiguration, damit die CLI die Funktionen findet (Workflow „Funktionen einspielen“).
+project_id = "zusage"
+
+[functions.run-now]
+verify_jwt = true
+
+[functions.profil-vorschlag]
+verify_jwt = true

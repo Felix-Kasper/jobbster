@@ -1,0 +1,35 @@
+name: Worker
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [auftrag]
+  schedule:
+    # Jeden Tag 04:30 UTC (05:30 in Wien im Winter): fällige Scout-Läufe für alle aktiven Nutzer
+    - cron: '30 4 * * *'
+    # Übergang, bis die Datenbank den Worker selbst anstößt: tagsüber alle 30 min nach offenen Aufträgen sehen.
+    # Kostet in einem privaten Repo rund 900 der 2.000 Freiminuten pro Monat. Danach diese Zeile löschen.
+    - cron: '7,37 6-20 * * *'
+
+concurrency:
+  group: worker
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aufträge abarbeiten
+        run: |
+          node --version
+          node worker/worker.mjs ${{ github.event.schedule == '30 4 * * *' && '--plan' || '' }}
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SCOUT_VARIANTE: ${{ vars.SCOUT_VARIANTE }}

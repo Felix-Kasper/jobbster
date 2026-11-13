@@ -1,0 +1,45 @@
+name: Prüfen
+
+# Läuft bei jedem Push und jedem Pull Request. Ohne grünen Lauf wird nicht veröffentlicht.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Worker und Stripe-Hilfen
+        run: |
+          node worker/test/worker.test.mjs
+          node worker/test/stripe.test.mjs
+      - name: App installieren
+        working-directory: app
+        run: npm ci
+      - name: Typen, Lint, Unit-Tests, Build
+        working-directory: app
+        run: |
+          npx tsc --noEmit
+          npx eslint .
+          npx vitest run
+          npx vite build
+      - name: Ende-zu-Ende im Browser
+        working-directory: app
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+          node test/e2e.mjs
+      - name: Server-Funktionen gleich wie geteilte Bibliothek
+        run: |
+          for d in billing stripe-webhook delete-account; do cmp supabase/functions/_shared/stripe.mjs supabase/functions/$d/stripe.mjs; done
+          for f in claude agents prompts; do cmp worker/lib/$f.mjs supabase/functions/run-now/lib/$f.mjs; cmp worker/lib/$f.mjs supabase/functions/profil-vorschlag/lib/$f.mjs; done

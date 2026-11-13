@@ -1,0 +1,10 @@
+# Schlüssel und lokale Ergebnisse gehören nie ins Repo
+.env
+.env.*
+env.txt
+key.txt
+spike-report.*
+node_modules/
+dist/
+dist-test/
+app/test/out/

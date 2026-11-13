@@ -1,0 +1,907 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Jobbster Landingpage</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Jobbster sucht jeden Morgen passende Stellen, schreibt auf Knopfdruck das Anschreiben und hält alle Bewerbungen geordnet an einem Ort.">
+<meta name="theme-color" content="#f6f6f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0e11" media="(prefers-color-scheme: dark)">
+<script>document.documentElement.classList.add('js')</script>
+<style>
+/* Jobbster · ruhig und klar. Gleiche Zeichen wie die App: weiße Flächen, feine Rahmen, Tinte für Aktionen.
+   Farbe nur für Status. Bewegung zeigt, was das Produkt tut, und ruht bei „weniger Bewegung“. */
+@font-face { font-family: "Hanken Grotesk"; src: url(data:font/woff2;base64,/*FONT*/) format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; }
+:root {
+  color-scheme: light;
+  --bg: #f6f6f4; --surface: #ffffff; --sunk: #efefec; --hover: #f8f8f6;
+  --line: #e3e3df; --line-2: #cfcfc9;
+  --ink: #0e1116; --ink-2: #353b44; --muted: #5f6670; --faint: #8b9099;
+  --primary: #0e1116; --primary-ink: #ffffff; --primary-hover: #262b33;
+  --accent: #2447d6; --accent-soft: #eef1fd; --accent-line: #c9d2f6; --licht: #3ddc97;
+  --green: #0b7348; --green-soft: #e9f5ef; --green-line: #bfe0cf;
+  --amber: #965200; --amber-soft: #fcf3e6; --amber-line: #efd2a8;
+  --red: #b42318;
+  --dark: #0e1116; --dark-2: #171b21; --dark-line: #2a3039; --dark-ink: #f1f2f4; --dark-muted: #a3aab4;
+  --font: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --max: 1120px;
+  --side: max(20px, env(safe-area-inset-left, 0px));
+  --side-r: max(20px, env(safe-area-inset-right, 0px));
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --shadow: 0 1px 2px rgba(14, 17, 22, 0.05), 0 24px 48px -16px rgba(14, 17, 22, 0.16);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0c0e11; --surface: #14171b; --sunk: #1a1d22; --hover: #1a1e23;
+    --line: #262a31; --line-2: #353a43;
+    --ink: #f1f2f4; --ink-2: #d0d4da; --muted: #9ba2ac; --faint: #737a85;
+    --primary: #f1f2f4; --primary-ink: #0e1116; --primary-hover: #d9dce1;
+    --accent: #8ea4ff; --accent-soft: #1a2142; --accent-line: #33407a;
+    --green: #5fd09a; --green-soft: #0f2a1e; --green-line: #1e4a35;
+    --amber: #f0b45c; --amber-soft: #2d2010; --amber-line: #57401c;
+    --dark: #f1f2f4; --dark-2: #e4e6ea; --dark-line: #cfd3d9; --dark-ink: #0e1116; --dark-muted: #4b525c;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 24px 48px -16px rgba(0, 0, 0, 0.6);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0c0e11; --surface: #14171b; --sunk: #1a1d22; --hover: #1a1e23; --line: #262a31; --line-2: #353a43;
+  --ink: #f1f2f4; --ink-2: #d0d4da; --muted: #9ba2ac; --faint: #737a85; --primary: #f1f2f4; --primary-ink: #0e1116; --primary-hover: #d9dce1;
+  --accent: #8ea4ff; --accent-soft: #1a2142; --accent-line: #33407a; --green: #5fd09a; --green-soft: #0f2a1e; --green-line: #1e4a35;
+  --amber: #f0b45c; --amber-soft: #2d2010; --amber-line: #57401c;
+  --dark: #f1f2f4; --dark-2: #e4e6ea; --dark-line: #cfd3d9; --dark-ink: #0e1116; --dark-muted: #4b525c;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 72px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 var(--font); letter-spacing: 0.002em; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; overflow-x: hidden; }
+h1, h2, h3, p, ul, ol, dl, dd, figure { margin: 0; padding: 0; }
+ul, ol { list-style: none; }
+a { color: inherit; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+::selection { background: var(--accent-soft); color: var(--ink); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.skip:focus { position: fixed; left: 12px; top: 12px; z-index: 99; width: auto; height: auto; clip-path: none; padding: 8px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.nums { font-variant-numeric: tabular-nums; }
+.wrap { width: 100%; max-width: calc(var(--max) + 40px); margin: 0 auto; padding-left: var(--side); padding-right: var(--side-r); }
+h1 { font-size: clamp(2.25rem, 1.4rem + 3.6vw, 3.5rem); font-weight: 650; line-height: 1.04; letter-spacing: -0.035em; text-wrap: balance; }
+h2 { font-size: clamp(1.625rem, 1.2rem + 1.6vw, 2.25rem); font-weight: 650; line-height: 1.12; letter-spacing: -0.028em; text-wrap: balance; }
+h3 { font-size: 15px; font-weight: 650; letter-spacing: -0.005em; line-height: 1.35; }
+.lead { font-size: clamp(1rem, 0.95rem + 0.3vw, 1.125rem); color: var(--ink-2); line-height: 1.55; }
+.small { font-size: 13px; line-height: 1.5; }
+.muted { color: var(--muted); }
+.kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 550; color: var(--ink-2); padding: 4px 10px 4px 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.kicker i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px var(--green-soft); animation: puls 2.4s ease-in-out infinite; }
+@keyframes puls { 50% { box-shadow: 0 0 0 6px transparent; } }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 9px; border: 1px solid var(--primary); background: var(--primary); color: var(--primary-ink); font-weight: 600; font-size: 14px; text-decoration: none; white-space: nowrap; cursor: pointer; transition: background-color 160ms ease, border-color 160ms ease, transform 160ms var(--ease); }
+.btn svg { width: 14px; height: 14px; transition: transform 200ms var(--ease); }
+.btn.second { background: var(--surface); color: var(--ink); border-color: var(--line-2); }
+.btn.klein { min-height: 34px; padding: 0 12px; font-size: 13px; border-radius: 8px; }
+.btn:active { transform: translateY(1px); }
+@media (hover: hover) {
+  .btn:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+  .btn:hover svg { transform: translateX(3px); }
+  .btn.second:hover { background: var(--hover); border-color: var(--faint); }
+}
+.link { color: var(--ink); text-decoration: underline; text-decoration-color: var(--line-2); text-underline-offset: 0.2em; transition: text-decoration-color 160ms ease; }
+.link:hover { text-decoration-color: currentColor; }
+
+/* Einblenden beim Scrollen (nur mit Skript und ohne „weniger Bewegung“) */
+.js [data-reveal] { opacity: 0; transform: translateY(14px); transition: opacity 700ms var(--ease), transform 700ms var(--ease); transition-delay: calc(var(--i, 0) * 80ms); }
+.js [data-reveal].drin { opacity: 1; transform: none; }
+
+/* ---------- Kopf ---------- */
+.kopfzeile { position: sticky; top: 0; z-index: 30; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px); border-bottom: 1px solid transparent; transition: border-color 200ms ease; }
+.kopfzeile.zu { border-bottom-color: var(--line); }
+.kopfzeile .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 60px; }
+.marke { display: inline-flex; align-items: center; gap: 8px; font-weight: 650; font-size: 16px; letter-spacing: -0.015em; text-decoration: none; }
+.marke .logo { width: 22px; height: 22px; flex: none; display: block; }
+.kopfzeile nav { display: flex; align-items: center; gap: 4px; }
+.kopfzeile nav a:not(.btn) { display: none; padding: 6px 10px; border-radius: 6px; font-size: 13.5px; font-weight: 500; color: var(--muted); text-decoration: none; transition: color 150ms ease, background-color 150ms ease; }
+.kopfzeile nav a:not(.btn):hover { color: var(--ink); background: var(--sunk); }
+@media (min-width: 820px) { .kopfzeile nav a:not(.btn) { display: inline-block; } .kopfzeile nav .btn { margin-left: 8px; } }
+
+/* ---------- Start ---------- */
+.hero { padding: clamp(40px, 7vw, 88px) 0 clamp(56px, 8vw, 104px); }
+.hero .wrap { display: grid; gap: clamp(40px, 5vw, 64px); align-items: center; }
+@media (min-width: 980px) { .hero .wrap { grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr); } }
+.hero-text { display: grid; gap: 22px; justify-items: start; }
+.hero-text h1 span { display: block; }
+.hero-text h1 .zwei { color: var(--muted); }
+.hero-text .lead { max-width: 44ch; }
+.knoepfe { display: flex; flex-wrap: wrap; gap: 10px; }
+.fakten { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; max-width: 520px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); margin-top: 8px; }
+.fakten div { padding: 12px 14px; min-width: 0; }
+.fakten div + div { border-left: 1px solid var(--line); }
+.fakten b { display: block; font-size: 17px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.fakten span { display: block; font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+/* ---------- Produkt-Fenster (wie die App) ---------- */
+.fenster { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; font-size: 13.5px; line-height: 1.5; text-align: left; }
+.fenster .leiste { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--bg); }
+.fenster .leiste .marke { font-size: 13.5px; }
+.fenster .leiste .marke .logo { width: 17px; height: 17px; }
+.fenster .leiste small { color: var(--faint); font-size: 11.5px; }
+.fenster .innen { padding: 16px; }
+.seg { display: flex; gap: 2px; padding: 3px; border-radius: 9px; background: var(--sunk); border: 1px solid var(--line); width: fit-content; max-width: 100%; overflow: hidden; }
+.seg span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 6px; font-size: 12.5px; font-weight: 550; color: var(--muted); white-space: nowrap; border: 1px solid transparent; }
+.seg span em { font-style: normal; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.seg span.an { background: var(--surface); color: var(--ink); border-color: var(--line); box-shadow: 0 1px 2px rgba(14, 17, 22, 0.06); }
+.liste { margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.zeile { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 14px; background: var(--surface); transition: background-color 300ms ease; }
+.zeile + .zeile { border-top: 1px solid var(--line); }
+.zeile.gewaehlt { background: var(--hover); }
+.zeile .t { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zeile .s { display: block; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.marken { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.pill { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: 5px; font-size: 11.5px; font-weight: 500; background: var(--sunk); color: var(--ink-2); border: 1px solid var(--line); white-space: nowrap; }
+.pill.gruen { background: var(--green-soft); color: var(--green); border-color: var(--green-line); }
+.pill.orange { background: var(--amber-soft); color: var(--amber); border-color: var(--amber-line); }
+.pill.blau { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-line); }
+.pill.aus { background: transparent; color: var(--faint); }
+.pill .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.ring { position: relative; width: 38px; height: 38px; display: grid; place-items: center; font-size: 12px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 3; }
+.ring .spur { stroke: var(--line); }
+.ring .wert { stroke: var(--green); stroke-linecap: round; stroke-dasharray: 113.1; stroke-dashoffset: calc(113.1 - 113.1 * var(--p, 0.8)); transition: stroke-dashoffset 1100ms var(--ease); }
+.ring.mittel .wert { stroke: var(--amber); }
+.pfeil { width: 14px; height: 14px; color: var(--faint); }
+.mini-knopf { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 7px; background: var(--primary); color: var(--primary-ink); font-size: 12px; font-weight: 600; white-space: nowrap; border: 1px solid var(--primary); }
+.mini-knopf.zweit { background: var(--surface); color: var(--ink); border-color: var(--line-2); }
+.dreh { width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid currentColor; border-right-color: transparent; animation: dreh 700ms linear infinite; }
+@keyframes dreh { to { transform: rotate(360deg); } }
+
+/* Live-Vorführung im Start: Liste, Klick, Entwurf */
+.demo { position: relative; }
+.demo .zeile { opacity: 1; }
+.js .demo:not(.laeuft) .zeile { opacity: 0; transform: translateY(8px); }
+.js .demo .zeile { transition: opacity 500ms var(--ease), transform 500ms var(--ease), background-color 300ms ease; transition-delay: calc(var(--n, 0) * 140ms); }
+.js .demo:not(.laeuft) .ring .wert { stroke-dashoffset: 113.1; }
+.demo .aktion { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.demo .aktion .mini-knopf .dreh { display: none; }
+.demo.schreibt .aktion .mini-knopf .dreh { display: inline-block; }
+.demo.schreibt .aktion .mini-knopf .w1 { display: none; }
+.demo .aktion .mini-knopf .w2, .demo .aktion .mini-knopf .w3 { display: none; }
+.demo.schreibt .aktion .mini-knopf .w2 { display: inline; }
+.demo.fertig .aktion .mini-knopf .w1, .demo.fertig .aktion .mini-knopf .w2, .demo.fertig .aktion .mini-knopf .dreh { display: none; }
+.demo.fertig .aktion .mini-knopf .w3 { display: inline; }
+.demo.fertig .aktion .mini-knopf { background: var(--surface); color: var(--green); border-color: var(--green-line); }
+.cursor { position: absolute; left: 0; top: 0; z-index: 3; width: 18px; height: 18px; pointer-events: none; opacity: 0; transition: transform 900ms var(--ease), opacity 300ms ease; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25)); }
+.cursor.klick { animation: klick 300ms ease; }
+@keyframes klick { 50% { transform: var(--pos) scale(0.82); } }
+.entwurf { position: absolute; z-index: 2; left: 16px; right: 16px; bottom: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 14px 16px; transform: translateY(calc(100% + 24px)); opacity: 0; transition: transform 700ms var(--ease), opacity 400ms ease; }
+.demo.fertig .entwurf { transform: none; opacity: 1; }
+.entwurf .kopf { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+.entwurf .kopf b { font-size: 13px; }
+.entwurf .text { font-size: 12.5px; line-height: 1.6; color: var(--ink-2); min-height: 6.4em; white-space: pre-wrap; }
+.entwurf .text::after { content: ""; display: inline-block; width: 1.5px; height: 1em; margin-left: 1px; vertical-align: -0.15em; background: var(--accent); animation: blink 1s steps(2) infinite; }
+.demo.still .entwurf .text::after { display: none; }
+@keyframes blink { 50% { opacity: 0; } }
+.entwurf .fuss { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--muted); }
+.entwurf .fuss .knoepfe-mini { display: flex; gap: 6px; }
+.demo-hinweis { margin-top: 10px; font-size: 12px; color: var(--faint); text-align: right; }
+
+/* ---------- Abschnitte ---------- */
+section { position: relative; }
+.abschnitt { padding: clamp(64px, 9vw, 120px) 0; border-top: 1px solid var(--line); }
+.abschnitt.weiss { background: var(--surface); }
+.kopf-abschnitt { display: grid; gap: 12px; align-content: start; max-width: 640px; margin-bottom: clamp(32px, 4vw, 48px); }
+.kopf-abschnitt .lead { max-width: 56ch; }
+.marker { font-size: 12.5px; font-weight: 600; color: var(--accent); letter-spacing: 0.01em; font-variant-numeric: tabular-nums; }
+
+/* So läuft es: vier Stufen, laufen von selbst weiter */
+.ablauf { display: grid; gap: 24px; align-items: start; }
+@media (min-width: 900px) { .ablauf { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 48px; } }
+.stufen { display: grid; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); overflow: hidden; }
+.stufe { position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 4px 14px; width: 100%; text-align: left; padding: 16px 18px; border: 0; background: transparent; cursor: pointer; transition: background-color 200ms ease; }
+.stufe + .stufe { border-top: 1px solid var(--line); }
+.stufe .nr { grid-row: span 2; width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line-2); display: grid; place-items: center; font-size: 12.5px; font-weight: 650; color: var(--muted); font-variant-numeric: tabular-nums; transition: all 250ms ease; }
+.stufe b { font-size: 15px; font-weight: 650; color: var(--muted); transition: color 250ms ease; }
+.stufe span.t { font-size: 13.5px; color: var(--muted); line-height: 1.55; display: grid; grid-template-rows: 0fr; transition: grid-template-rows 450ms var(--ease); }
+.stufe span.t > span { overflow: hidden; }
+.stufe .zeit { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: var(--primary); transform: scaleX(0); transform-origin: left; }
+.stufe[aria-selected="true"] { background: var(--hover); }
+.stufe[aria-selected="true"] .nr { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+.stufe[aria-selected="true"] b { color: var(--ink); }
+.stufe[aria-selected="true"] span.t { grid-template-rows: 1fr; }
+.stufe[aria-selected="true"] .zeit { animation: zeit var(--dauer, 6s) linear forwards; }
+.stufen.halt .stufe .zeit { animation-play-state: paused; }
+@keyframes zeit { to { transform: scaleX(1); } }
+@media (hover: hover) { .stufe:hover b { color: var(--ink); } }
+.buehne { position: relative; display: grid; }
+.buehne > .fenster { grid-area: 1 / 1; transition: opacity 450ms ease, transform 600ms var(--ease); }
+.buehne > .fenster:not(.aktiv) { opacity: 0; transform: translateY(10px) scale(0.985); pointer-events: none; visibility: hidden; transition: opacity 300ms ease, transform 400ms var(--ease), visibility 0s 400ms; }
+.blatt { border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; font-size: 12.5px; line-height: 1.65; color: var(--ink-2); }
+.blatt b { display: block; color: var(--ink); margin-bottom: 8px; font-size: 13px; }
+.blatt p + p { margin-top: 8px; }
+.gruppe { font-size: 11.5px; font-weight: 650; color: var(--muted); letter-spacing: 0.02em; margin: 14px 0 6px; }
+.punkt { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 5px 0; color: var(--ink-2); }
+.punkt i { font-style: normal; width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--line-2); display: grid; place-items: center; font-size: 11px; font-weight: 650; color: var(--ink); }
+.zeilen-fuss { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-top: 12px; color: var(--muted); font-size: 12px; }
+
+/* Bilanz */
+.bilanz { display: grid; gap: 16px; }
+@media (min-width: 900px) { .bilanz { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 24px; align-items: stretch; } }
+.karte { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; min-width: 0; }
+.gross-zahl { display: grid; align-content: space-between; gap: 24px; }
+.gross-zahl b { font-size: clamp(4.5rem, 3rem + 6vw, 7.5rem); font-weight: 650; letter-spacing: -0.06em; line-height: 0.9; font-variant-numeric: tabular-nums; }
+.gross-zahl p { color: var(--ink-2); max-width: 30ch; }
+.tabelle { display: grid; gap: 0; }
+.tabelle dt { font-size: 11.5px; font-weight: 650; color: var(--muted); letter-spacing: 0.02em; padding: 14px 0 6px; }
+.tabelle dt:first-child { padding-top: 0; }
+.tabelle dd { display: grid; grid-template-columns: minmax(0, 1fr) minmax(60px, 34%) 3.2em; gap: 14px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.tabelle dd > span:last-child { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.balken { height: 6px; border-radius: 3px; background: var(--sunk); overflow: hidden; }
+.balken i { display: block; height: 100%; width: calc(var(--p, 0) * 100%); border-radius: 3px; background: var(--primary); transform-origin: left; transition: transform 1200ms var(--ease); transition-delay: calc(var(--i, 0) * 90ms); }
+.balken i.gruen { background: var(--green); }
+.balken i.orange { background: var(--amber); }
+.balken i.leise { background: var(--line-2); }
+.js .tabelle:not(.drin) .balken i { transform: scaleX(0); }
+.tabelle dd.summe { font-weight: 650; border-top: 1px solid var(--ink); margin-top: 6px; grid-template-columns: minmax(0, 1fr) auto; }
+.bilanz-fuss { margin-top: 14px; font-size: 12.5px; color: var(--muted); }
+
+/* Ehrlich: ruhiges Raster mit feinen Linien */
+.raster { display: grid; grid-template-columns: minmax(0, 1fr); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--line); gap: 1px; }
+@media (min-width: 760px) { .raster { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1040px) { .raster { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.zelle { background: var(--surface); padding: 22px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.zelle.breit { grid-column: 1 / -1; }
+@media (min-width: 1040px) { .zelle.breit { grid-column: span 2; grid-row: span 2; } }
+.zelle .zahl { font-size: 44px; font-weight: 650; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.zelle p { color: var(--ink-2); font-size: 14px; }
+.zelle .symbol { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line-2); display: grid; place-items: center; color: var(--ink); }
+.zelle .symbol svg { width: 15px; height: 15px; }
+.teile { display: grid; gap: 10px; margin-top: 4px; }
+.teil { display: grid; grid-template-columns: 9em minmax(0, 1fr) 3.4em; gap: 12px; align-items: center; font-size: 13.5px; }
+.teil em { font-style: normal; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.js .teile:not(.drin) .balken i { transform: scaleX(0); }
+
+/* Fragen */
+.fragen { display: grid; gap: 24px; }
+@media (min-width: 900px) { .fragen { grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr); gap: 48px; } }
+.akkordeon { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); overflow: hidden; }
+.akkordeon details + details { border-top: 1px solid var(--line); }
+.akkordeon summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 20px; font-weight: 600; font-size: 14.5px; transition: background-color 150ms ease; }
+.akkordeon summary::-webkit-details-marker { display: none; }
+.akkordeon summary:hover { background: var(--hover); }
+.akkordeon summary svg { width: 14px; height: 14px; flex: none; color: var(--muted); transition: transform 300ms var(--ease); }
+.akkordeon details[open] summary svg { transform: rotate(45deg); }
+.akkordeon .antwort { padding: 0 20px 18px; color: var(--ink-2); font-size: 14px; max-width: 64ch; }
+.js .akkordeon details[open] .antwort { animation: auf 400ms var(--ease); }
+@keyframes auf { from { opacity: 0; transform: translateY(-4px); } }
+
+/* Formular */
+.formular { display: grid; gap: 14px; padding: clamp(20px, 3vw, 28px); }
+.formular h3 { font-size: 16px; }
+.feld { display: grid; gap: 6px; }
+.feld label, .feld .label { font-size: 12.5px; font-weight: 550; color: var(--ink-2); }
+.feld input[type="email"], .feld input[type="text"] { width: 100%; min-height: 42px; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface); font-size: 15px; transition: border-color 150ms ease, box-shadow 150ms ease; }
+.feld input:hover { border-color: var(--faint); }
+.feld input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.haken { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; font-size: 12.5px; color: var(--muted); }
+.haken input { width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--primary); }
+.falle { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.meldung { min-height: 1.5em; font-size: 13px; }
+.meldung.gut { color: var(--green); }
+.meldung.schlecht { color: var(--red); }
+.formular .btn { width: 100%; }
+
+/* Fuß */
+.seitenfuss { border-top: 1px solid var(--line); padding: 40px 0 calc(40px + env(safe-area-inset-bottom, 0px)); }
+.seitenfuss .wrap { display: grid; gap: 24px; }
+@media (min-width: 760px) { .seitenfuss .wrap { grid-template-columns: 1.4fr 1fr 1fr; align-items: start; } }
+.seitenfuss p { color: var(--muted); font-size: 13px; }
+.seitenfuss ul { display: grid; gap: 6px; font-size: 13px; }
+.seitenfuss a:not(.marke) { color: var(--muted); text-decoration: none; }
+.seitenfuss a:not(.marke):hover { color: var(--ink); }
+.seitenfuss .titel { font-size: 12px; font-weight: 650; color: var(--ink); margin-bottom: 8px; }
+
+/* Überblick: Bewerbungen ordnen sich von selbst */
+.brett { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 760px) { .brett { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.spalte { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px; min-width: 0; min-height: 120px; }
+@media (min-width: 760px) { .spalte { min-height: 210px; } }
+.spalte h3 { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; color: var(--ink-2); margin: 2px 4px 10px; }
+.spalte h3 em { font-style: normal; font-weight: 600; font-size: 11.5px; color: var(--muted); min-width: 22px; height: 20px; padding: 0 6px; border-radius: 6px; background: var(--surface); border: 1px solid var(--line); display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+.spalte ul { display: grid; gap: 8px; }
+.kartchen { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 11px; display: grid; gap: 3px; font-size: 12.5px; line-height: 1.4; }
+.kartchen b { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kartchen span { color: var(--muted); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kartchen .pill { margin-top: 5px; justify-self: start; }
+.kartchen.wandert { border-color: var(--ink); box-shadow: 0 6px 16px -8px rgba(14, 17, 22, 0.35); position: relative; z-index: 2; }
+.punkte { display: grid; gap: 0; margin-top: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+@media (min-width: 760px) { .punkte { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.punkte li { padding: 16px 18px; display: grid; gap: 4px; font-size: 13.5px; color: var(--ink-2); }
+.punkte li + li { border-top: 1px solid var(--line); }
+@media (min-width: 760px) { .punkte li + li { border-top: 0; border-left: 1px solid var(--line); } }
+.punkte b { color: var(--ink); font-size: 14px; font-weight: 650; }
+
+/* Schluss: erster Arbeitstag */
+.schluss { display: grid; gap: 28px; align-items: center; }
+@media (min-width: 900px) { .schluss { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 48px; } }
+.bild { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: #eef1ec; box-shadow: var(--shadow); }
+.bild svg { display: block; width: 100%; height: auto; }
+.bild .dampf { animation: dampf 2.6s ease-in-out infinite; }
+@keyframes dampf { 0% { opacity: 0; transform: translateY(6px); } 40% { opacity: 1; } 100% { opacity: 0; transform: translateY(-8px); } }
+.bild #ausweis { transform-origin: 262px 304px; animation: schwingen 4s ease-in-out infinite; }
+@keyframes schwingen { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+.bild #licht-tuer { animation: leuchten 3.2s ease-in-out infinite; }
+@keyframes leuchten { 50% { opacity: 0.8; } }
+.js .bild #toast { opacity: 0; transform: translate(24px, 300px); transition: opacity 600ms var(--ease) 500ms, transform 800ms var(--ease) 500ms; }
+.js .bild.drin #toast { opacity: 1; transform: translate(24px, 282px); }
+.formular textarea { width: 100%; min-height: 84px; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface); font: inherit; font-size: 15px; line-height: 1.5; resize: vertical; transition: border-color 150ms ease, box-shadow 150ms ease; }
+.formular textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .bild .dampf, .bild #ausweis, .bild #licht-tuer { animation: none; }
+  .js .bild #toast { opacity: 1; transform: translate(24px, 282px); transition: none; }
+  .js [data-reveal] { opacity: 1; transform: none; transition: none; }
+  .kicker i, .dreh, .entwurf .text::after { animation: none; }
+  .js .demo .zeile, .entwurf, .ring .wert, .balken i, .buehne > .fenster { transition: none !important; }
+  .stufe .zeit { display: none; }
+}
+</style>
+</head>
+<body>
+<a class="sr skip" href="#inhalt">Zum Inhalt</a>
+
+<header class="kopfzeile" id="kopf">
+  <div class="wrap">
+    <a class="marke" href="#inhalt" aria-label="Jobbster, nach oben"><svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5.6" fill="var(--primary)"/><path d="M13.6 10.2v6.1a3.6 3.6 0 0 1-3.6 3.6H8.6" fill="none" stroke="var(--primary-ink)" stroke-width="2.7" stroke-linecap="round"/><circle cx="13.6" cy="5.7" r="1.95" fill="var(--licht)"/></svg>Jobbster</a>
+    <nav aria-label="Hauptnavigation">
+      <a href="#ablauf">So läuft es</a>
+      <a href="#ueberblick">Überblick</a>
+      <a href="#bilanz">Ergebnis</a>
+      <a href="#fragen">Fragen</a>
+      <a class="btn klein" href="#start">Gratis testen</a>
+    </nav>
+  </div>
+</header>
+
+<main id="inhalt">
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-text">
+      <span class="kicker" data-reveal><i aria-hidden="true"></i>Für Berufseinstieg in AT, DE und CH</span>
+      <h1 data-reveal style="--i:1"><span>Stelle gefunden.</span><span class="zwei">Entwurf fertig.</span></h1>
+      <p class="lead" data-reveal style="--i:2">Jobbster sucht jeden Morgen so viele passende Stellen, wie du willst, schreibt auf Knopfdruck das Anschreiben und hält alle Bewerbungen an einem Ort geordnet.</p>
+      <div class="knoepfe" data-reveal style="--i:3">
+        <a class="btn" href="#start">Gratis testen <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+        <a class="btn second" href="#ablauf">So läuft es</a>
+      </div>
+      <div class="fakten" data-reveal style="--i:4">
+        <div><b>Täglich</b><span>neue Treffer, so viele du willst</span></div>
+        <div><b>10 pro Tag</b><span>empfohlen für echte Chancen</span></div>
+        <div><b>1 Seite</b><span>Anschreiben, nur mit deinen Fakten</span></div>
+      </div>
+    </div>
+
+    <div data-reveal style="--i:2">
+      <div class="fenster demo" id="demo" role="img" aria-label="Vorführung mit Beispieldaten: Jobbster zeigt vier neue Treffer mit Match und Chance. Ein Klick auf Entwurf schreiben, dann erscheint das fertige Anschreiben.">
+        <div class="leiste"><span class="marke"><svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5.6" fill="var(--primary)"/><path d="M13.6 10.2v6.1a3.6 3.6 0 0 1-3.6 3.6H8.6" fill="none" stroke="var(--primary-ink)" stroke-width="2.7" stroke-linecap="round"/><circle cx="13.6" cy="5.7" r="1.95" fill="var(--licht)"/></svg>Jobbster</span><small>Mo 16.11., 05:30 · Beispieldaten</small></div>
+        <div class="innen">
+          <div class="seg"><span>Bereit <em>1</em></span><span class="an">Neu <em>10</em></span><span>Beworben <em>6</em></span><span>Gespräche <em>2</em></span></div>
+          <div class="liste">
+            <div class="zeile gewaehlt" style="--n:0">
+              <div class="ring" style="--p:0.88"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="spur" cx="20" cy="20" r="18"/><circle class="wert" cx="20" cy="20" r="18"/></svg>88</div>
+              <div style="min-width:0"><span class="t">Trainee Qualitätsmanagement</span><span class="s">Arlwerk Komponenten GmbH · Graz · vor 2 Tagen</span>
+                <div class="aktion"><span class="mini-knopf" id="demo-knopf"><span class="dreh" aria-hidden="true"></span><span class="w1">Entwurf schreiben</span><span class="w2">Wird geschrieben</span><span class="w3">Entwurf bereit</span></span><span class="pill gruen"><span class="dot"></span>Chance hoch</span></div>
+              </div>
+              <svg class="pfeil" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>
+            </div>
+            <div class="zeile" style="--n:1">
+              <div class="ring" style="--p:0.81"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="spur" cx="20" cy="20" r="18"/><circle class="wert" cx="20" cy="20" r="18"/></svg>81</div>
+              <div style="min-width:0"><span class="t">Junior Produktionsplanerin</span><span class="s">Traunstein Fertigungstechnik AG · Linz · vor 4 Tagen</span>
+                <div class="marken"><span class="pill gruen"><span class="dot"></span>Chance hoch</span><span class="pill">E-Mail</span></div></div>
+              <svg class="pfeil" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>
+            </div>
+            <div class="zeile" style="--n:2">
+              <div class="ring mittel" style="--p:0.74"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="spur" cx="20" cy="20" r="18"/><circle class="wert" cx="20" cy="20" r="18"/></svg>74</div>
+              <div style="min-width:0"><span class="t">Graduate Program Operations</span><span class="s">Isarblick Mobility SE · München · vor 6 Tagen</span>
+                <div class="marken"><span class="pill orange"><span class="dot"></span>Chance mittel</span><span class="pill orange">Frist 30.11.</span></div></div>
+              <svg class="pfeil" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>
+            </div>
+            <div class="zeile" style="--n:3">
+              <div class="ring mittel" style="--p:0.66"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="spur" cx="20" cy="20" r="18"/><circle class="wert" cx="20" cy="20" r="18"/></svg>66</div>
+              <div style="min-width:0"><span class="t">Trainee Supply Chain</span><span class="s">Donaukai Logistik GmbH · Linz · vor 9 Tagen</span>
+                <div class="marken"><span class="pill orange"><span class="dot"></span>Chance mittel</span><span class="pill">Portal</span></div></div>
+              <svg class="pfeil" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="entwurf" aria-hidden="true">
+          <div class="kopf"><b>Anschreiben · Trainee Qualitätsmanagement</b><span class="pill gruen">Fertig</span></div>
+          <div class="text" id="demo-text"></div>
+          <div class="fuss"><span class="nums">1 Seite · 1.640 Zeichen</span><span class="knoepfe-mini"><span class="mini-knopf zweit">PDF</span><span class="mini-knopf zweit">Word</span><span class="mini-knopf">Portal öffnen</span></span></div>
+        </div>
+        <svg class="cursor" id="demo-cursor" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 8-6 1.5L10 19z" fill="#0e1116" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      </div>
+      <p class="demo-hinweis">Vorführung mit Beispieldaten</p>
+    </div>
+  </div>
+</section>
+
+<section class="abschnitt weiss" id="ablauf" aria-labelledby="ablauf-titel">
+  <div class="wrap">
+    <div class="kopf-abschnitt">
+      <span class="marker" data-reveal>So läuft es</span>
+      <h2 id="ablauf-titel" data-reveal style="--i:1">Vom Treffer bis zum Gespräch, in vier Schritten.</h2>
+      <p class="lead" data-reveal style="--i:2">Jobbster übernimmt Suche, Text und Vorbereitung. Was abgeschickt wird, entscheidest du.</p>
+    </div>
+    <div class="ablauf">
+      <div class="stufen" id="stufen" role="tablist" aria-label="Stufen einer Bewerbung" data-reveal>
+        <button class="stufe" role="tab" id="tab-0" aria-controls="bild-0" aria-selected="true" data-geh="0"><span class="nr">1</span><b>Jobbster sucht Stellen</b><span class="t"><span>Jeden Morgen, so viele Treffer wie du einstellst. Empfohlen sind 10 pro Tag. Jede Firma nur einmal, jeder Treffer mit Match und ehrlicher Chance.</span></span><span class="zeit"></span></button>
+        <button class="stufe" role="tab" id="tab-1" aria-controls="bild-1" aria-selected="false" tabindex="-1" data-geh="1"><span class="nr">2</span><b>Jobbster schreibt den Entwurf</b><span class="t"><span>Auf Knopfdruck. Eine Seite, nur mit Fakten aus deinem Lebenslauf, als PDF oder Word.</span></span><span class="zeit"></span></button>
+        <button class="stufe" role="tab" id="tab-2" aria-controls="bild-2" aria-selected="false" tabindex="-1" data-geh="2"><span class="nr">3</span><b>Du sendest selbst</b><span class="t"><span>Mail oder Portal öffnet sich mit dem fertigen Text. Du prüfst, änderst und schickst ab. Jobbster trägt die Bewerbung in deinen Überblick ein.</span></span><span class="zeit"></span></button>
+        <button class="stufe" role="tab" id="tab-3" aria-controls="bild-3" aria-selected="false" tabindex="-1" data-geh="3"><span class="nr">4</span><b>Du übst das Gespräch</b><span class="t"><span>Kommt die Einladung, fügst du sie ein. Zurück kommt ein Spickzettel: mit wem du sprichst und was du sagen musst.</span></span><span class="zeit"></span></button>
+      </div>
+      <div class="buehne" data-reveal style="--i:1">
+        <div class="fenster aktiv" id="bild-0" role="tabpanel" aria-labelledby="tab-0">
+          <div class="leiste"><span class="marke"><svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5.6" fill="var(--primary)"/><path d="M13.6 10.2v6.1a3.6 3.6 0 0 1-3.6 3.6H8.6" fill="none" stroke="var(--primary-ink)" stroke-width="2.7" stroke-linecap="round"/><circle cx="13.6" cy="5.7" r="1.95" fill="var(--licht)"/></svg>Gefunden</span><small>Beispieldaten</small></div>
+          <div class="innen">
+            <div class="zeile" style="padding:0 0 12px;border:0">
+              <div class="ring" style="--p:0.88"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="spur" cx="20" cy="20" r="18"/><circle class="wert" cx="20" cy="20" r="18"/></svg>88</div>
+              <div style="min-width:0"><span class="t">Trainee Qualitätsmanagement</span><span class="s">Arlwerk Komponenten GmbH · Graz</span></div><span></span>
+            </div>
+            <p style="color:var(--ink-2)">Passt zu deinem Praktikum im Qualitätsmanagement und führt in ein Programm mit drei Stationen. Chance: hoch. Einsteiger sind ausdrücklich gesucht, die Anzeige ist 2 Tage alt.</p>
+            <p class="gruppe">Stichworte aus der Anzeige</p>
+            <div class="marken"><span class="pill gruen">8D-Report</span><span class="pill gruen">SAP</span><span class="pill gruen">Power BI</span><span class="pill gruen">Englisch C1</span><span class="pill aus">IATF 16949</span></div>
+            <div class="zeilen-fuss"><span>Grün steht in deinem Lebenslauf, grau fehlt.</span><span class="mini-knopf">Entwurf schreiben</span></div>
+          </div>
+        </div>
+        <div class="fenster" id="bild-1" role="tabpanel" aria-labelledby="tab-1">
+          <div class="leiste"><span class="marke"><svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5.6" fill="var(--primary)"/><path d="M13.6 10.2v6.1a3.6 3.6 0 0 1-3.6 3.6H8.6" fill="none" stroke="var(--primary-ink)" stroke-width="2.7" stroke-linecap="round"/><circle cx="13.6" cy="5.7" r="1.95" fill="var(--licht)"/></svg>Geschrieben</span><small>Beispieldaten</small></div>
+          <div class="innen">
+            <div class="blatt">
+              <b>Bewerbung als Trainee Qualitätsmanagement</b>
+              <p>Sehr geehrte Frau Lechner,</p>
+              <p>ich schließe im Februar mein Studium Wirtschaftsingenieurwesen ab und will Qualität dort verbessern, wo sie entsteht: in der Fertigung.</p>
+              <p>In meinem Praktikum habe ich 8D-Reports erstellt und die Reklamationsquote in einem Projekt um 18 % gesenkt. Genau diese Arbeit beschreibt Ihre zweite Station im Programm.</p>
+            </div>
+            <div class="zeilen-fuss"><span class="nums">238 Wörter · 1.640 Zeichen · 1 Seite</span><span style="display:flex;gap:6px"><span class="mini-knopf zweit">PDF</span><span class="mini-knopf zweit">Word</span></span></div>
+          </div>
+        </div>
+        <div class="fenster" id="bild-2" role="tabpanel" aria-labelledby="tab-2">
+          <div class="leiste"><span class="marke"><svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5.6" fill="var(--primary)"/><path d="M13.6 10.2v6.1a3.6 3.6 0 0 1-3.6 3.6H8.6" fill="none" stroke="var(--primary-ink)" stroke-width="2.7" stroke-linecap="round"/><circle cx="13.6" cy="5.7" r="1.95" fill="var(--licht)"/></svg>Gesendet</span><small>Beispieldaten</small></div>
+          <div class="innen">
+            <p><b>Trainee Qualitätsmanagement</b></p>
+            <p class="s" style="color:var(--muted);font-size:12.5px">Arlwerk Komponenten GmbH · Bewerbung über das Portal der Firma</p>
+            <div class="marken" style="margin-top:12px"><span class="pill blau">Anschreiben kopiert</span><span class="pill">Lebenslauf anhängen</span></div>
+            <div class="zeilen-fuss" style="justify-content:flex-start"><span class="mini-knopf">Portal öffnen</span><span class="mini-knopf zweit">Beworben</span></div>
+            <p class="gruppe">Wichtig</p>
+            <p style="color:var(--ink-2)">Nach dem Absenden ein Klick auf „Beworben“, dann wandert die Bewerbung in deinen Überblick.</p>
+          </div>
+        </div>
+        <div class="fenster" id="bild-3" role="tabpanel" aria-labelledby="tab-3">
+          <div class="leiste"><span class="marke"><svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5.6" fill="var(--primary)"/><path d="M13.6 10.2v6.1a3.6 3.6 0 0 1-3.6 3.6H8.6" fill="none" stroke="var(--primary-ink)" stroke-width="2.7" stroke-linecap="round"/><circle cx="13.6" cy="5.7" r="1.95" fill="var(--licht)"/></svg>Interview 1</span><small>Do 26.11., 10:00 · Video, 45 min</small></div>
+          <div class="innen">
+            <p><b>Zeig, dass du Qualität mit Zahlen verbesserst.</b></p>
+            <p class="gruppe">Das musst du sagen</p>
+            <div class="punkt"><i>1</i><span>18 % weniger Reklamationen in meinem Praktikumsprojekt</span></div>
+            <div class="punkt"><i>2</i><span>12 Monate Fertigungssteuerung mit SAP und Power BI</span></div>
+            <div class="punkt"><i>3</i><span>Teilprojekt mit 5 Personen im Formula-Student-Team geleitet</span></div>
+            <p class="gruppe">Rückfrage an die Firma</p>
+            <p style="color:var(--ink-2)">Woran messen Sie nach der ersten Station, ob ich gut war?</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="abschnitt" id="ueberblick" aria-labelledby="ueberblick-titel">
+  <div class="wrap">
+    <div class="kopf-abschnitt">
+      <span class="marker" data-reveal>Überblick</span>
+      <h2 id="ueberblick-titel" data-reveal style="--i:1">Du verlierst nie den Überblick.</h2>
+      <p class="lead" data-reveal style="--i:2">Bei zehn Bewerbungen am Tag wird jede Tabelle zum Chaos. Jobbster ordnet und sortiert alles auf einer Oberfläche: was bereit ist, was raus ist, wo ein Gespräch ansteht.</p>
+    </div>
+    <div class="fenster" data-reveal style="--i:1">
+      <div class="leiste"><span class="marke"><svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5.6" fill="var(--primary)"/><path d="M13.6 10.2v6.1a3.6 3.6 0 0 1-3.6 3.6H8.6" fill="none" stroke="var(--primary-ink)" stroke-width="2.7" stroke-linecap="round"/><circle cx="13.6" cy="5.7" r="1.95" fill="var(--licht)"/></svg>Jobbster</span><small>Deine Bewerbungen · Beispieldaten</small></div>
+      <div class="innen">
+        <div class="brett" id="brett" aria-label="Beispiel: Bewerbungen nach Stand sortiert">
+          <div class="spalte"><h3>Bereit <em data-zahl>3</em></h3><ul>
+            <li class="kartchen wandert" id="wanderer"><b>Trainee Qualitätsmanagement</b><span>Arlwerk Komponenten GmbH · Graz</span><span class="pill gruen" data-pill>Entwurf bereit</span></li>
+            <li class="kartchen"><b>Junior Controlling</b><span>Feldkirchner Baustoffe GmbH · Innsbruck</span><span class="pill orange">Frist 24.11.</span></li>
+            <li class="kartchen"><b>Graduate Program Operations</b><span>Isarblick Mobility SE · München</span><span class="pill gruen">Entwurf bereit</span></li>
+          </ul></div>
+          <div class="spalte"><h3>Beworben <em data-zahl>3</em></h3><ul>
+            <li class="kartchen"><b>Junior Produktionsplanerin</b><span>Traunstein Fertigungstechnik AG · Linz</span><span class="pill">vor 3 Tagen</span></li>
+            <li class="kartchen"><b>Trainee Supply Chain</b><span>Donaukai Logistik GmbH · Linz</span><span class="pill">vor 5 Tagen</span></li>
+            <li class="kartchen"><b>Business Analyst</b><span>Kammerlander Software GmbH · Wien</span><span class="pill">vor 6 Tagen</span></li>
+          </ul></div>
+          <div class="spalte"><h3>Gespräche <em data-zahl>1</em></h3><ul>
+            <li class="kartchen"><b>Junior Consultant</b><span>Seefeld Partners GmbH · München</span><span class="pill blau">Fr 27.11., 14:00</span></li>
+          </ul></div>
+          <div class="spalte"><h3>Zusage <em data-zahl>0</em></h3><ul></ul></div>
+        </div>
+        <ul class="punkte">
+          <li><b>Sortiert nach Match und Frist</b>Was am besten passt und was zuerst abläuft, steht oben.</li>
+          <li><b>Termine im Blick</b>Einladungen mit Datum, Uhrzeit und Gesprächspartner, dazu die Vorbereitung.</li>
+          <li><b>Alles an einer Stelle</b>Anschreiben, Stellenanzeige, Notizen und Absagegründe bei jeder Bewerbung.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="abschnitt weiss" id="bilanz" aria-labelledby="bilanz-titel">
+  <div class="wrap">
+    <div class="kopf-abschnitt">
+      <span class="marker" data-reveal>Ergebnis</span>
+      <h2 id="bilanz-titel" data-reveal style="--i:1">Ein Nutzer, zehn Tage.</h2>
+      <p class="lead" data-reveal style="--i:2">So lief die Bewerbungsphase eines Nutzers vom 31.10. bis 09.11.2026. Ein echtes Ergebnis, keine Garantie.</p>
+    </div>
+    <div class="bilanz">
+      <div class="karte gross-zahl" data-reveal>
+        <b class="nums" data-zaehl="30">30</b>
+        <p>Bewerbungen in zehn Tagen abgeschickt, im Schnitt drei am Tag.</p>
+      </div>
+      <div class="karte" data-reveal style="--i:1">
+        <dl class="tabelle nums" id="tabelle">
+          <dt>So verschickt</dt>
+          <dd><span>Über Portale der Firmen</span><span class="balken"><i style="--p:0.9;--i:0"></i></span><span>27</span></dd>
+          <dd><span>Per E-Mail</span><span class="balken"><i style="--p:0.1;--i:1"></i></span><span>3</span></dd>
+          <dt>Das kam zurück</dt>
+          <dd><span>Einladungen zum Erstgespräch</span><span class="balken"><i class="gruen" style="--p:0.1667;--i:2"></i></span><span>5</span></dd>
+          <dd><span>Absagen</span><span class="balken"><i class="orange" style="--p:0.1333;--i:3"></i></span><span>4</span></dd>
+          <dd><span>Warten noch auf Antwort</span><span class="balken"><i class="leise" style="--p:0.7;--i:4"></i></span><span>21</span></dd>
+        </dl>
+      </div>
+    </div>
+    <p class="bilanz-fuss" data-reveal>Balken zeigen den Anteil an allen 30 Bewerbungen.</p>
+  </div>
+</section>
+
+<section class="abschnitt" id="anders" aria-labelledby="anders-titel">
+  <div class="wrap">
+    <div class="kopf-abschnitt">
+      <span class="marker" data-reveal>Was anders ist</span>
+      <h2 id="anders-titel" data-reveal style="--i:1">Ehrlich statt laut.</h2>
+      <p class="lead" data-reveal style="--i:2">Jeder Treffer zeigt, warum er passt und wie gut die Chance wirklich ist.</p>
+    </div>
+    <div class="raster">
+      <div class="zelle breit" data-reveal>
+        <h3>So entsteht der Match</h3>
+        <p>Vier Teile, zusammen 100 Punkte. Beispiel: Trainee Qualitätsmanagement, Match 88.</p>
+        <div class="teile" id="teile">
+          <div class="teil"><span>Rolle</span><span class="balken"><i style="--p:0.886;--i:0"></i></span><em>31/35</em></div>
+          <div class="teil"><span>Lebenslauf-Wert</span><span class="balken"><i style="--p:0.75;--i:1"></i></span><em>15/20</em></div>
+          <div class="teil"><span>Chance</span><span class="balken"><i class="gruen" style="--p:0.914;--i:2"></i></span><em>32/35</em></div>
+          <div class="teil"><span>Ort</span><span class="balken"><i style="--p:1;--i:3"></i></span><em>10/10</em></div>
+        </div>
+        <p class="small muted">Chance hoch: Einsteiger ausdrücklich gesucht, Muss-Anforderungen erfüllt, Anzeige 2 Tage alt.</p>
+      </div>
+      <div class="zelle" data-reveal style="--i:1"><span class="symbol"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5"/></svg></span><h3>Nur deine Fakten</h3><p>Keine erfundene Erfahrung, keine Note, keine Zahl. Was nicht im Lebenslauf steht, kommt nicht ins Anschreiben.</p></div>
+      <div class="zelle" data-reveal style="--i:2"><span class="symbol"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></span><h3>Deine Daten bleiben deine</h3><p>Gespeichert in Frankfurt. Export und Löschen mit einem Knopf im Konto.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="abschnitt weiss" id="fragen" aria-labelledby="fragen-titel">
+  <div class="wrap fragen">
+    <div class="kopf-abschnitt" style="margin-bottom:0">
+      <span class="marker" data-reveal>Fragen</span>
+      <h2 id="fragen-titel" data-reveal style="--i:1">Häufige Fragen</h2>
+      <p class="lead" data-reveal style="--i:2">Etwas offen? Schreib uns über das Feld ganz unten.</p>
+    </div>
+    <div class="akkordeon" data-reveal style="--i:1">
+      <details open><summary>Wie viele Bewerbungen pro Tag sind sinnvoll?<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></summary><p class="antwort">Du stellst selbst ein, wie viele Treffer Jobbster jeden Morgen sucht, zwischen 1 und 12. Empfohlen sind 10: genug für echte Chancen und wenig genug, dass du jede vor dem Absenden in Ruhe liest.</p></details>
+      <details><summary>Bewirbt sich Jobbster automatisch für mich?<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></summary><p class="antwort">Nein. Jobbster loggt sich nirgends ein und sendet nie etwas ab. Du liest jeden Entwurf, änderst ihn und schickst ihn selbst, per E-Mail oder über das Portal der Firma.</p></details>
+      <details><summary>Was passiert mit meinem Lebenslauf?<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></summary><p class="antwort">Er wird in Frankfurt gespeichert. Für Suche und Entwurf geht der Text an die Claude API von Anthropic in den USA. Laut Anthropic werden API-Daten standardmäßig nicht zum Training verwendet. Ein Knopf im Konto löscht dein Konto mit allen Daten.</p></details>
+      <details><summary>Klingen KI-Anschreiben nicht alle gleich?<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></summary><p class="antwort">Das passiert, wenn eine KI raten muss. Jobbster schreibt nur mit Fakten aus deinem Lebenslauf, sucht für jede Firma einen konkreten Grund und hält sich an eine Seite.</p></details>
+      <details><summary>Für wen ist das gedacht?<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></summary><p class="antwort">Für Studierende im letzten Semester und Absolventen, die in Österreich, Deutschland oder der Schweiz einsteigen wollen: Trainee-Programme, Junior-Stellen und bezahlte Praktika, auf Deutsch oder Englisch.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="abschnitt" id="start" aria-labelledby="start-titel">
+  <div class="wrap schluss">
+    <figure class="bild" id="bild" data-reveal>
+      <svg viewBox="0 0 560 440" role="img" aria-labelledby="bild-titel"><title id="bild-titel">Illustration: Ein junger Mann an seinem ersten Arbeitstag, lachend, mit Kaffee und Mitarbeiterausweis, vor einer offenen Tür.</title>
+  <!-- Raum -->
+  <rect width="560" height="440" fill="#eef1ec"/>
+  <rect x="0" y="352" width="560" height="88" fill="#e2e6df"/>
+  <!-- Fenster mit Stadt -->
+  <rect x="34" y="52" width="150" height="190" rx="8" fill="#dfe9f4" stroke="#0e1116" stroke-width="3"/>
+  <path d="M109 52v190M34 147h150" stroke="#0e1116" stroke-width="3"/>
+  <path d="M48 242v-44h18v-22h20v66M120 242v-58h22v28h16v30" fill="#c6d3e2"/>
+  <circle cx="160" cy="80" r="11" fill="#ffd36b"/>
+  <!-- Tür mit Licht (wie im Logo) -->
+  <path d="M352 352V64h132v288" fill="#1d2430"/>
+  <path id="licht-tuer" d="M420 74l64-10v288l-64-9z" fill="#3ddc97"/>
+  <path d="M420 74l64-10v288l-64-9z" fill="url(#licht)" opacity=".55"/>
+  <path d="M352 352V64h132v288" fill="none" stroke="#0e1116" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M484 352l60 70H352z" fill="#3ddc97" opacity=".18"/>
+  <!-- Pflanze -->
+  <path d="M522 352c-6-40 4-70 18-92M522 352c-14-30-30-44-48-50M522 352c8-26 22-40 32-44" stroke="#0b7348" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <ellipse cx="540" cy="258" rx="12" ry="22" transform="rotate(30 540 258)" fill="#0b7348"/>
+  <ellipse cx="472" cy="300" rx="10" ry="20" transform="rotate(-60 472 300)" fill="#0b7348"/>
+  <path d="M502 352h40l-6 40h-28z" fill="#0e1116"/>
+  <!-- Kalender -->
+  <g transform="translate(206 30) rotate(-4)">
+    <rect width="96" height="92" rx="8" fill="#fff" stroke="#0e1116" stroke-width="3"/>
+    <path d="M0 8a8 8 0 0 1 8-8h80a8 8 0 0 1 8 8v20H0z" fill="#2447d6"/>
+    <text x="48" y="20" text-anchor="middle" font-family="Hanken Grotesk, sans-serif" font-size="13" font-weight="700" fill="#fff">MONTAG</text>
+    <text x="48" y="72" text-anchor="middle" font-family="Hanken Grotesk, sans-serif" font-size="40" font-weight="700" fill="#0e1116">1</text>
+    <text x="48" y="86" text-anchor="middle" font-family="Hanken Grotesk, sans-serif" font-size="10" font-weight="600" fill="#5f6670">ERSTER TAG</text>
+  </g>
+  <!-- Person -->
+  <g id="person">
+    <!-- Rücken/Oberkörper -->
+    <path d="M150 440c0-86 40-140 112-140s112 54 112 140z" fill="#1f2a44"/>
+    <!-- Hemd -->
+    <path d="M236 302l26 64 26-64z" fill="#fff"/>
+    <path d="M262 318l-8 10 8 44 8-44z" fill="#2447d6"/>
+    <!-- Revers -->
+    <path d="M236 302l26 64-42-40 6-26zM288 302l-26 64 42-40-6-26z" fill="#2a3858"/>
+    <!-- Hals -->
+    <path d="M244 270h36v36l-18 12-18-12z" fill="#e8b48f"/>
+    <!-- Kopf -->
+    <ellipse cx="262" cy="232" rx="50" ry="56" fill="#f1c39f"/>
+    <circle cx="212" cy="238" r="11" fill="#e8b48f"/>
+    <circle cx="312" cy="238" r="11" fill="#e8b48f"/>
+    <!-- Haare -->
+    <path d="M210 228c-8-54 24-80 58-80 38 0 60 26 52 72-4-18-14-30-28-36-6 10-18 16-30 18 4-6 4-12 2-16-14 14-34 22-54 42z" fill="#3a2a20"/>
+    <!-- Augen fröhlich -->
+    <path d="M236 236q8-9 16 0M272 236q8-9 16 0" stroke="#0e1116" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- Wangen -->
+    <circle cx="232" cy="254" r="7" fill="#f09a86" opacity=".55"/>
+    <circle cx="292" cy="254" r="7" fill="#f09a86" opacity=".55"/>
+    <!-- Lächeln -->
+    <path d="M244 258q18 22 36 0z" fill="#0e1116"/>
+    <path d="M250 262q12 8 24 0" fill="#fff"/>
+    <!-- Band und Ausweis -->
+    <path d="M238 304l18 70M286 304l-18 70" stroke="#3ddc97" stroke-width="5"/>
+    <g id="ausweis">
+      <rect x="236" y="370" width="52" height="66" rx="6" fill="#fff" stroke="#0e1116" stroke-width="3"/>
+      <rect x="248" y="380" width="28" height="24" rx="4" fill="#dfe9f4"/>
+      <path d="M246 414h32M246 424h22" stroke="#0e1116" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <!-- Arm mit Becher -->
+    <path d="M336 368C352 362 362 356 370 348" stroke="#1f2a44" stroke-width="40" stroke-linecap="round" fill="none"/>
+    <g id="becher">
+      <path d="M352 286h44l-6 58h-32z" fill="#fff" stroke="#0e1116" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M350 286h48v-10h-48z" fill="#0e1116"/>
+      <path d="M356 306h36l-2 18h-32z" fill="#3ddc97"/>
+      <path d="M354 336c4 12 36 12 40 0v12c-4 10-36 10-40 0z" fill="#f1c39f"/><ellipse cx="374" cy="336" rx="21" ry="8" fill="#f1c39f"/>
+      <path class="dampf" d="M364 266c-6-10 6-14 0-24M382 266c-6-10 6-14 0-24" stroke="#9aa3ad" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </g>
+  </g>
+  <!-- Benachrichtigung -->
+  <g id="toast">
+    <rect width="196" height="54" rx="12" fill="#fff" stroke="#0e1116" stroke-width="3"/>
+    <circle cx="27" cy="27" r="13" fill="#3ddc97"/>
+    <path d="M21 27l4.5 4.5L33 23" stroke="#0e1116" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="50" y="24" font-family="Hanken Grotesk, sans-serif" font-size="13" font-weight="700" fill="#0e1116">Willkommen im Team</text>
+    <text x="50" y="40" font-family="Hanken Grotesk, sans-serif" font-size="11" fill="#5f6670">Dein Ausweis ist bereit</text>
+  </g>
+  <defs>
+    <linearGradient id="licht" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  </defs>
+</svg>
+    </figure>
+    <div class="stack" style="display:grid;gap:20px">
+      <div class="kopf-abschnitt" style="margin-bottom:0">
+        <span class="marker" data-reveal>Gratis testen</span>
+        <h2 id="start-titel" data-reveal style="--i:1">Dein erster Tag fängt hier an.</h2>
+        <p class="lead" data-reveal style="--i:2">Gerade läuft die Beta. Frag deinen Zugang an oder schreib uns, was dir fehlt. Wir lesen jede Nachricht.</p>
+      </div>
+      <form id="anfrage" class="karte formular" data-reveal style="--i:2" novalidate>
+        <div class="feld"><label for="f-mail">E-Mail-Adresse</label><input id="f-mail" name="email" type="email" autocomplete="email" inputmode="email" placeholder="du@beispiel.at" required></div>
+        <div class="feld"><label for="f-text">Was suchst du? Oder dein Feedback (optional)</label><textarea id="f-text" name="text" maxlength="460" rows="3" placeholder="Trainee Consulting in München, ab März"></textarea></div>
+        <div class="falle" aria-hidden="true"><label for="f-web">Website</label><input id="f-web" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+        <div class="haken"><input id="f-ok" name="consent" type="checkbox" required><label for="f-ok">Ich bin einverstanden, dass Jobbster meine E-Mail-Adresse und meine Nachricht speichert, um mir den Zugang zu schicken oder zu antworten.</label></div>
+        <button class="btn" type="submit">Gratis testen</button>
+        <p class="meldung" id="f-meldung" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="seitenfuss">
+  <div class="wrap">
+    <div style="display:grid;gap:10px">
+      <a class="marke" href="#inhalt"><svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="5.6" fill="var(--primary)"/><path d="M13.6 10.2v6.1a3.6 3.6 0 0 1-3.6 3.6H8.6" fill="none" stroke="var(--primary-ink)" stroke-width="2.7" stroke-linecap="round"/><circle cx="13.6" cy="5.7" r="1.95" fill="var(--licht)"/></svg>Jobbster</a>
+      <p>Bewerbungen finden, schreiben und im Blick behalten.</p>
+      <p class="small">© 2026 Jobbster · <span class="nums" id="uhr">Innsbruck</span></p>
+    </div>
+    <nav aria-label="Seite"><p class="titel">Seite</p><ul><li><a href="#ablauf">So läuft es</a></li><li><a href="#ueberblick">Überblick</a></li><li><a href="#bilanz">Ergebnis</a></li><li><a href="#fragen">Fragen</a></li></ul></nav>
+    <div><p class="titel">Rechtliches</p><p>Impressum, Datenschutz und Bedingungen stehen vor dem Start hier.</p></div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var ruhig = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Kopfzeile bekommt eine Linie, sobald gescrollt wird
+  var kopf = document.getElementById('kopf');
+  function linie() { kopf.classList.toggle('zu', window.scrollY > 8); }
+  linie(); window.addEventListener('scroll', linie, { passive: true });
+
+  // Einblenden, sobald etwas ins Bild kommt. Ohne Skript oder mit „weniger Bewegung“ ist alles sofort sichtbar.
+  var ziele = document.querySelectorAll('[data-reveal], #tabelle, #teile');
+  function zeig(el) { el.classList.add('drin'); }
+  if (ruhig || !('IntersectionObserver' in window)) { ziele.forEach(zeig); }
+  else {
+    var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { zeig(e.target); io.unobserve(e.target); } }); }, { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
+    ziele.forEach(function (el) { io.observe(el); });
+    // Sicherheitsnetz: nach 3 s ist alles im Bild sichtbar, auch wenn ein Ereignis fehlt
+    setTimeout(function () { ziele.forEach(function (el) { var r = el.getBoundingClientRect(); if (r.top < innerHeight && r.bottom > 0) zeig(el); }); }, 3000);
+  }
+
+  // Zahl hochzählen
+  document.querySelectorAll('[data-zaehl]').forEach(function (el) {
+    if (ruhig || !('IntersectionObserver' in window)) return;
+    var ziel = Number(el.getAttribute('data-zaehl'));
+    el.textContent = '0';
+    var o = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      o.disconnect();
+      var t0 = performance.now();
+      (function schritt(t) { var p = Math.min(1, (t - t0) / 1400); el.textContent = Math.round(ziel * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(schritt); })(t0);
+    }, { threshold: 0.4 });
+    o.observe(el);
+  });
+
+  // ---------- Live-Vorführung im Start ----------
+  var demo = document.getElementById('demo');
+  var text = document.getElementById('demo-text');
+  var knopf = document.getElementById('demo-knopf');
+  var cursor = document.getElementById('demo-cursor');
+  var brief = 'Sehr geehrte Frau Lechner,\n\nich schließe im Februar mein Studium Wirtschaftsingenieurwesen ab und will Qualität dort verbessern, wo sie entsteht: in der Fertigung. In meinem Praktikum habe ich die Reklamationsquote um 18 % gesenkt.';
+  var uhren = [];
+  function spaeter(fn, ms) { uhren.push(setTimeout(fn, ms)); }
+  function stopp() { uhren.forEach(clearTimeout); uhren = []; }
+  function zeigeEndstand() { demo.classList.add('laeuft', 'fertig', 'still'); text.textContent = brief; }
+  function setzeCursor(x, y, sichtbar) {
+    var pos = 'translate(' + x + 'px,' + y + 'px)';
+    cursor.style.setProperty('--pos', pos);
+    cursor.style.transform = pos;
+    cursor.style.opacity = sichtbar ? '1' : '0';
+  }
+  function runde() {
+    stopp();
+    demo.classList.remove('laeuft', 'schreibt', 'fertig', 'still');
+    text.textContent = '';
+    var w = demo.clientWidth, h = demo.clientHeight;
+    setzeCursor(w * 0.82, h * 0.92, false);
+    spaeter(function () { demo.classList.add('laeuft'); }, 300);
+    spaeter(function () {
+      var d = demo.getBoundingClientRect(), k = knopf.getBoundingClientRect();
+      setzeCursor(k.left - d.left + k.width * 0.55, k.top - d.top + k.height * 0.45, true);
+    }, 1900);
+    spaeter(function () { cursor.classList.remove('klick'); void cursor.offsetWidth; cursor.classList.add('klick'); demo.classList.add('schreibt'); }, 2900);
+    spaeter(function () { setzeCursor(w * 0.9, h * 1.05, false); }, 3300);
+    spaeter(function () {
+      demo.classList.add('fertig');
+      var i = 0;
+      (function tippe() {
+        i = Math.min(brief.length, i + 3);
+        text.textContent = brief.slice(0, i);
+        if (i < brief.length) spaeter(tippe, 22);
+        else spaeter(function () { demo.classList.add('still'); }, 400);
+      })();
+    }, 4300);
+    spaeter(runde, 13500);
+  }
+  if (ruhig || !('IntersectionObserver' in window)) zeigeEndstand();
+  else {
+    var sichtbar = false;
+    new IntersectionObserver(function (es) {
+      var jetzt = es[0].isIntersecting;
+      if (jetzt && !sichtbar) runde();
+      if (!jetzt && sichtbar) { stopp(); }
+      sichtbar = jetzt;
+    }, { threshold: 0.35 }).observe(demo);
+    document.addEventListener('visibilitychange', function () { if (document.hidden) stopp(); else if (sichtbar) runde(); });
+  }
+
+  // ---------- So läuft es: Stufen laufen von selbst weiter, Klick oder Pfeiltasten wählen ----------
+  var liste = document.getElementById('stufen');
+  var tabs = Array.prototype.slice.call(liste.querySelectorAll('[role="tab"]'));
+  var bilder = tabs.map(function (t) { return document.getElementById(t.getAttribute('aria-controls')); });
+  var DAUER = 6000, jetzt = 0, auto = !ruhig, timer = null, imBild = false;
+  liste.style.setProperty('--dauer', DAUER + 'ms');
+  function waehle(n, fokus) {
+    jetzt = (n + tabs.length) % tabs.length;
+    tabs.forEach(function (t, i) {
+      var an = i === jetzt;
+      t.setAttribute('aria-selected', an ? 'true' : 'false');
+      t.tabIndex = an ? 0 : -1;
+      var z = t.querySelector('.zeit'); z.style.animation = 'none'; void z.offsetWidth; z.style.animation = '';
+      bilder[i].classList.toggle('aktiv', an);
+    });
+    if (fokus) tabs[jetzt].focus();
+    plane();
+  }
+  function plane() {
+    clearTimeout(timer);
+    if (auto && imBild && !liste.classList.contains('halt')) timer = setTimeout(function () { waehle(jetzt + 1); }, DAUER);
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { auto = false; liste.classList.add('halt'); waehle(i); });
+    t.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); auto = false; liste.classList.add('halt'); waehle(jetzt + 1, true); }
+      if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); auto = false; liste.classList.add('halt'); waehle(jetzt - 1, true); }
+    });
+  });
+  if (ruhig) liste.classList.add('halt');
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (es) { imBild = es[0].isIntersecting; if (imBild) waehle(jetzt); else clearTimeout(timer); }, { threshold: 0.4 }).observe(liste);
+  }
+
+  // ---------- Überblick: eine Bewerbung wandert durch die Spalten ----------
+  var brett = document.getElementById('brett');
+  var spalten = Array.prototype.slice.call(brett.querySelectorAll('.spalte'));
+  var wanderer = document.getElementById('wanderer');
+  var pill = wanderer.querySelector('[data-pill]');
+  var basis = [2, 3, 1, 0];
+  var stand = [['Entwurf bereit', 'pill gruen'], ['heute beworben', 'pill'], ['Do 26.11., 10:00', 'pill blau'], ['Zusage erhalten', 'pill gruen']];
+  var wo = 0, brettUhr = null, brettSichtbar = false;
+  function zeigeStand() {
+    pill.textContent = stand[wo][0]; pill.className = stand[wo][1];
+    spalten.forEach(function (sp, i) { sp.querySelector('[data-zahl]').textContent = basis[i] + (i === wo ? 1 : 0); });
+  }
+  function setze(n, animiert) {
+    var vorher = wanderer.getBoundingClientRect();
+    wo = n;
+    spalten[wo].querySelector('ul').prepend(wanderer);
+    zeigeStand();
+    if (!animiert || !wanderer.animate) return;
+    var nachher = wanderer.getBoundingClientRect();
+    wanderer.animate([{ transform: 'translate(' + (vorher.left - nachher.left) + 'px,' + (vorher.top - nachher.top) + 'px)' }, { transform: 'none' }], { duration: 750, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
+  }
+  function brettSchritt() {
+    clearTimeout(brettUhr);
+    if (!brettSichtbar) return;
+    setze((wo + 1) % 4, wo !== 3);
+    brettUhr = setTimeout(brettSchritt, wo === 3 ? 3600 : 2400);
+  }
+  if (ruhig || !('IntersectionObserver' in window)) { setze(2, false); }
+  else {
+    zeigeStand();
+    new IntersectionObserver(function (es) {
+      brettSichtbar = es[0].isIntersecting;
+      clearTimeout(brettUhr);
+      if (brettSichtbar) brettUhr = setTimeout(brettSchritt, 1400);
+    }, { threshold: 0.4 }).observe(brett);
+  }
+
+  // ---------- Zugangscode anfragen ----------
+  var form = document.getElementById('anfrage');
+  var meldung = document.getElementById('f-meldung');
+  var ENDPUNKT = 'https://pekfnuywzouakdpehouc.supabase.co/functions/v1/waitlist';
+  function sag(t, art) { meldung.textContent = t; meldung.className = 'meldung ' + (art || ''); }
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var mail = form.email.value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) { sag('Bitte prüfe die E-Mail-Adresse.', 'schlecht'); form.email.focus(); return; }
+    if (!form.consent.checked) { sag('Bitte setz den Haken, sonst darf ich deine Adresse nicht speichern.', 'schlecht'); form.consent.focus(); return; }
+    var b = form.querySelector('button');
+    b.disabled = true; sag('Wird gesendet …');
+    var text = form.text.value.trim();
+    fetch(ENDPUNKT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: mail, consent: true, source: 'landing', note: text.slice(0, 480) || null, website: form.website.value }) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok && j.ok, grund: j.grund }; }); })
+      .then(function (r) {
+        if (r.ok) { sag('Angekommen. Wir melden uns per E-Mail, meist innerhalb eines Tages.', 'gut'); form.email.value = ''; form.text.value = ''; }
+        else if (r.grund === 'email') sag('Bitte prüfe die E-Mail-Adresse.', 'schlecht');
+        else if (r.grund === 'spaeter') sag('Gerade fragen sehr viele an. Bitte versuch es in einer Stunde noch einmal.', 'schlecht');
+        else sag('Das hat nicht geklappt. Bitte versuch es später noch einmal.', 'schlecht');
+      })
+      .catch(function () { sag('Keine Verbindung zum Server. In der Vorschau wird nichts gesendet.', 'schlecht'); })
+      .then(function () { b.disabled = false; });
+  });
+})();
+</script>
+</body>
+</html>

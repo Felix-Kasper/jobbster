@@ -1,0 +1,39 @@
+name: Funktionen einspielen
+
+# Spielt die KI-Funktionen in Supabase ein: run-now (Entwurf sofort) und profil-vorschlag (perfekter Job).
+# Startet von Hand (Actions → Funktionen einspielen → Run workflow) und bei jeder Änderung an diesen Funktionen.
+# Braucht das Secret SUPABASE_ACCESS_TOKEN (Supabase → Account → Access Tokens). Der Claude-Schlüssel liegt in Supabase selbst.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/run-now/**'
+      - 'supabase/functions/profil-vorschlag/**'
+      - 'worker/lib/**'
+
+permissions:
+  contents: read
+
+jobs:
+  einspielen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJEKT: pekfnuywzouakdpehouc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Kopien der Bibliothek prüfen
+        run: |
+          for f in claude agents prompts; do
+            cmp worker/lib/$f.mjs supabase/functions/run-now/lib/$f.mjs
+            cmp worker/lib/$f.mjs supabase/functions/profil-vorschlag/lib/$f.mjs
+          done
+      - name: Einspielen
+        run: |
+          supabase functions deploy run-now --project-ref "$PROJEKT"
+          supabase functions deploy profil-vorschlag --project-ref "$PROJEKT"
