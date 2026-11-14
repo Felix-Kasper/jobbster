@@ -35,5 +35,5 @@ jobs:
           for f in claude traumjob; do cmp worker/lib/$f.mjs supabase/functions/profil-vorschlag/lib/$f.mjs; done
       - name: Einspielen
         run: |
-          supabase functions deploy run-now --project-ref "$PROJEKT"
-          supabase functions deploy profil-vorschlag --project-ref "$PROJEKT"
+          supabase functions deploy run-now --project-ref "$PROJEKT" --yes
+          supabase functions deploy profil-vorschlag --project-ref "$PROJEKT" --yes
