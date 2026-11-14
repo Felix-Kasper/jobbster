@@ -114,7 +114,7 @@ const leadJson = (company, title, url, extra = {}) => ({
 function claude(req, res, body) {
   const tools = (body.tools || []).map((t) => t.type);
   const hatAssistant = body.messages.some((m) => m.role === 'assistant');
-  apiLog.push({ model: body.model, tools, format: Boolean(body.output_config), system: body.system.slice(0, 30), bisZu: /Finde bis zu (\d+) aktuelle/.exec(body.system)?.[1] });
+  apiLog.push({ model: body.model, tools, format: Boolean(body.output_config), system: body.system.slice(0, 30), bisZu: /Ziel sind (\d+) gute Treffer/.exec(body.system)?.[1] });
   if (!req.headers['x-api-key']) return send(res, 401, { error: { message: 'x-api-key fehlt' } });
   if (tools.includes('web_search_20260318')) return send(res, 400, { error: { message: 'web_search_20260318 requires allowed_callers' } });
   const ok = (text, usage) => send(res, 200, { role: 'assistant', stop_reason: 'end_turn', content: [{ type: 'text', text }], usage });
