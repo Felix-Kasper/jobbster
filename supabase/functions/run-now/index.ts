@@ -37,8 +37,13 @@ Deno.serve(async (req: Request) => {
   const queueId = String(b.queue_id ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(queueId)) return antwort(400, { ok: false, grund: "eingabe" });
 
-  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  const apiKey = (Deno.env.get("ANTHROPIC_API_KEY") ?? "").trim();
   if (!apiKey) return antwort(503, { ok: false, grund: "ki_nicht_eingerichtet" });
+  // Nur den reinen Schlüssel annehmen. Vorspann oder Zeilenumbruch im Secret würde ihn sonst in Fehlermeldungen tragen.
+  if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(apiKey)) {
+    console.error("ANTHROPIC_API_KEY hat ein ungültiges Format (Wert verdeckt)");
+    return antwort(503, { ok: false, grund: "ki_schluessel_ungueltig" });
+  }
 
   const url = Deno.env.get("SUPABASE_URL");
   const key = dienstSchluessel();
@@ -100,7 +105,7 @@ Deno.serve(async (req: Request) => {
     await db.from("queue").update({ status: "fertig", finished_at: new Date().toISOString() }).eq("id", auftrag.id);
     return antwort(200, { ok: true, sekunden: Math.round((Date.now() - t0) / 1000) });
   } catch (e) {
-    const grund = String((e as Error).message ?? e).slice(0, 300);
+    const grund = String((e as Error).message ?? e).replace(/sk-ant-[A-Za-z0-9_-]+/g, "sk-ant-***").replace(/(Invalid header value:?)[\s\S]*/i, "$1 (verdeckt)").slice(0, 300);
     console.error("run-now", grund);
     await db.from("runs").insert({ user_id: uid, queue_id: auftrag.id, agent: "writer", cost_usd: Number(claude.usd().toFixed(4)), duration_ms: Date.now() - t0, status: "fehler", error: grund });
     await db.from("queue").update({ status: "fehler", error: grund, finished_at: new Date().toISOString() }).eq("id", auftrag.id);

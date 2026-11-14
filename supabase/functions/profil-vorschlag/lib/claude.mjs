@@ -23,9 +23,21 @@ export function kosten(model, u = {}) {
   return (i * q.in + o * q.out + cw * q.cw + cr * q.cr) / 1e6 + (u.server_tool_use?.web_search_requests || 0) * SUCHE_USD;
 }
 
+/** Schlüssel und Kopfzeilen nie in Fehlermeldungen: Diese landen in der Datenbank und in Protokollen. */
+export function verdecke(s) {
+  return String(s ?? '')
+    .replace(/sk-ant-[A-Za-z0-9_-]+/g, 'sk-ant-***')
+    .replace(/(Invalid header value:?)[\s\S]*/i, '$1 (verdeckt)');
+}
+
+/** Schlüssel prüfen, bevor er in eine Kopfzeile kommt. Leerzeichen, Zeilenumbrüche oder Vorspann machen ihn unbrauchbar. */
+export function schluesselOk(k) {
+  return typeof k === 'string' && /^sk-ant-[A-Za-z0-9_-]{20,}$/.test(k);
+}
+
 export class ApiFehler extends Error {
   constructor(status, message) {
-    super(message);
+    super(verdecke(message));
     this.status = status;
   }
 }
@@ -57,7 +69,7 @@ export function createClaude({ post, log = () => {}, wartenMaxS = 90 }) {
       try {
         res = await post(body, version);
       } catch (e) {
-        letzter = new ApiFehler(0, `Netzwerk: ${e.message}`);
+        letzter = new ApiFehler(0, `Netzwerk: ${verdecke(e.message)}`);
         await schlaf(Math.min(5 * (versuch + 1), wartenMaxS) * 1000);
         continue;
       }

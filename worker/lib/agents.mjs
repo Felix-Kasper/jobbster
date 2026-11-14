@@ -214,24 +214,3 @@ export async function vorbereitung({ claude, profil, lead, stufe = 'interview1',
 
   return { prep: sauber, hinweise, nutzung: summe(recherche, text), model: c.modellText };
 }
-
-/** Suchfelder aus der freien Beschreibung des perfekten Jobs. Haiku, ohne Werkzeuge, kostet Bruchteile eines Cents. */
-export async function traumjobFelder({ claude, text, cfg = {} }) {
-  const c = { ...STANDARD, ...cfg };
-  const eingabe = String(text ?? '').trim().slice(0, 2000);
-  if (eingabe.length < 40) throw new Error('Beschreibung zu kurz');
-  const z = await claude.zug({ model: c.modellScout, system: P.traumjobAuswerten(), user: `BESCHREIBUNG\n${eingabe}`, format: P.TRAUMJOB_SCHEMA, maxTokens: 1500 });
-  const d = leseJson(z.text);
-  if (!d) throw new Error('Keine lesbare Antwort');
-  const arten = new Set(['Trainee', 'Junior', 'Graduate', 'Bezahltes Praktikum', 'Berufseinstieg']);
-  const felder = {
-    zielrollen: leer(d.zielrollen) ?? '',
-    stellenarten: (Array.isArray(d.stellenarten) ? d.stellenarten : []).filter((x) => arten.has(x)),
-    orte: (Array.isArray(d.orte) ? d.orte : []).map((o) => String(o).trim()).filter(Boolean).slice(0, 8),
-    start: leer(d.start) ?? '',
-    ausschluesse: leer(d.ausschluesse) ?? '',
-    wuensche: leer(d.wuensche) ?? '',
-  };
-  for (const k of Object.keys(felder)) if (typeof felder[k] === 'string') felder[k] = ohneStrich(felder[k]);
-  return { felder, model: z.model, nutzung: summe(z) };
-}

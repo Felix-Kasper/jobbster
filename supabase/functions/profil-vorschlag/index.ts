@@ -5,7 +5,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { createClaude } from "./lib/claude.mjs";
-import { traumjobFelder } from "./lib/agents.mjs";
+import { traumjobFelder } from "./lib/traumjob.mjs";
 
 const PRO_TAG = 6;
 const cors = {
@@ -38,8 +38,13 @@ Deno.serve(async (req: Request) => {
   if (text.length < 40) return antwort(400, { ok: false, grund: "zu_kurz", text: "Beschreib deinen perfekten Job in zwei, drei Sätzen." });
   if (text.length > 2000) return antwort(400, { ok: false, grund: "zu_lang", text: "Bitte höchstens 2.000 Zeichen." });
 
-  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  const apiKey = (Deno.env.get("ANTHROPIC_API_KEY") ?? "").trim();
   if (!apiKey) return antwort(503, { ok: false, grund: "ki_nicht_eingerichtet" });
+  // Nur den reinen Schlüssel annehmen. Vorspann oder Zeilenumbruch im Secret würde ihn sonst in Fehlermeldungen tragen.
+  if (!/^sk-ant-[A-Za-z0-9_-]{20,}$/.test(apiKey)) {
+    console.error("ANTHROPIC_API_KEY hat ein ungültiges Format (Wert verdeckt)");
+    return antwort(503, { ok: false, grund: "ki_schluessel_ungueltig" });
+  }
   const url = Deno.env.get("SUPABASE_URL");
   const key = dienstSchluessel();
   if (!url || !key) return antwort(500, { ok: false, grund: "server_konfig" });
@@ -85,7 +90,7 @@ Deno.serve(async (req: Request) => {
     });
     return antwort(200, { ok: true, felder: r.felder });
   } catch (e) {
-    const grund = String((e as Error).message ?? e).slice(0, 300);
+    const grund = String((e as Error).message ?? e).replace(/sk-ant-[A-Za-z0-9_-]+/g, "sk-ant-***").replace(/(Invalid header value:?)[\s\S]*/i, "$1 (verdeckt)").slice(0, 300);
     console.error("profil-vorschlag", grund);
     await db.from("runs").insert({ user_id: uid, agent: "profil", cost_usd: Number(claude.usd().toFixed(4)), duration_ms: Date.now() - t0, status: "fehler", error: grund });
     return antwort(500, { ok: false, grund: "fehler" });

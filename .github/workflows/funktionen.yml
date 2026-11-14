@@ -31,8 +31,8 @@ jobs:
         run: |
           for f in claude agents prompts; do
             cmp worker/lib/$f.mjs supabase/functions/run-now/lib/$f.mjs
-            cmp worker/lib/$f.mjs supabase/functions/profil-vorschlag/lib/$f.mjs
           done
+          for f in claude traumjob; do cmp worker/lib/$f.mjs supabase/functions/profil-vorschlag/lib/$f.mjs; done
       - name: Einspielen
         run: |
           supabase functions deploy run-now --project-ref "$PROJEKT"

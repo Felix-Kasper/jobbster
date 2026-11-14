@@ -3,8 +3,9 @@
 import http from 'node:http';
 import assert from 'node:assert/strict';
 import { main } from '../worker.mjs';
-import { traumjobFelder } from '../lib/agents.mjs';
+import { traumjobFelder } from '../lib/traumjob.mjs';
 import { profilText } from '../lib/prompts.mjs';
+import { schluesselOk, verdecke } from '../lib/claude.mjs';
 
 const A = 'aaaaaaaa-0000-4000-8000-000000000001'; // Mitglied mit Profil
 const B = 'bbbbbbbb-0000-4000-8000-000000000002'; // kein Mitglied
@@ -269,7 +270,16 @@ try {
   await main(env, ['--plan']);
   pruefe('Probe-Zugang bekommt genau einen Suchlauf in 7 Tagen', () => assert.equal(DB.queue.length, 1));
 
-  // 6. Perfekter Job: fließt in jedes Profil ein und füllt die Suchfelder
+  // 6. Schlüssel nie in Fehlermeldungen
+  pruefe('Schlüssel und Kopfzeilen werden in Fehlern verdeckt', () => {
+    assert.equal(verdecke('Invalid header value: "Schlüssel: \nsk-ant-abc_DEF-123"'), 'Invalid header value: (verdeckt)');
+    assert.equal(verdecke('kaputt sk-ant-api03-abcdefghijklmnop rest'), 'kaputt sk-ant-*** rest');
+    assert.ok(schluesselOk('sk-ant-api03-' + 'a'.repeat(40)));
+    assert.ok(!schluesselOk('Schlüssel: sk-ant-api03-' + 'a'.repeat(40)));
+    assert.ok(!schluesselOk('sk-ant-api03-' + 'a'.repeat(40) + '\n'));
+  });
+
+  // 7. Perfekter Job: fließt in jedes Profil ein und füllt die Suchfelder
   pruefe('Perfekter Job steht im Profil für die KI', () => assert.match(profilText({ preferences: { traumjob: 'Qualität in der Fertigung, Graz' }, cv_text: 'x' }), /Perfekter Job in eigenen Worten.*Qualität in der Fertigung, Graz/));
   let gesehen = null;
   const attrappe = { zug: async (o) => { gesehen = o; return { text: JSON.stringify({ zielrollen: 'Trainee Qualität – Industrie', stellenarten: ['Trainee', 'Vollzeit'], orte: ['Graz', ' '], start: '', ausschluesse: 'Außendienst', wuensche: 'Unbekannt' }), model: 'claude-haiku-5-5', anfragen: 1, tokensEin: 100, tokensAus: 50, usd: 0.0004 }; } };

@@ -15,7 +15,7 @@
 import http from 'node:http';
 import https from 'node:https';
 import { pathToFileURL } from 'node:url';
-import { createClaude } from './lib/claude.mjs';
+import { createClaude, schluesselOk, verdecke } from './lib/claude.mjs';
 import { scout, entwurf, vorbereitung } from './lib/agents.mjs';
 
 const kurzId = (id) => String(id || '').slice(0, 8);
@@ -72,9 +72,14 @@ function signaleText(leads) {
 }
 
 export async function main(env = process.env, argv = process.argv.slice(2)) {
+  env = { ...env, ANTHROPIC_API_KEY: String(env.ANTHROPIC_API_KEY ?? '').trim() };
   const fehlt = ['SUPABASE_URL', 'SUPABASE_SERVICE_KEY', 'ANTHROPIC_API_KEY'].filter((k) => !env[k]);
   if (fehlt.length) {
     console.log(`Es fehlen: ${fehlt.join(', ')}`);
+    return 1;
+  }
+  if (!schluesselOk(env.ANTHROPIC_API_KEY) && !env.ANTHROPIC_BASE_URL) {
+    console.log('ANTHROPIC_API_KEY hat ein ungültiges Format. Nur den Schlüssel eintragen, ohne Vorspann und ohne Zeilenumbruch.');
     return 1;
   }
   const db = datenbank(env.SUPABASE_URL.replace(/\/$/, ''), env.SUPABASE_SERVICE_KEY);
@@ -200,7 +205,7 @@ export async function main(env = process.env, argv = process.argv.slice(2)) {
       console.log(`    fertig in ${Math.round((Date.now() - t0) / 1000)} s, ${usd(nutzung.usd)}`);
     } catch (e) {
       fehler++;
-      const grund = String(e.message || e).slice(0, 300);
+      const grund = verdecke(e.message || e).slice(0, 300);
       console.log(`    ✖ ${grund}`);
       try {
         await db('POST', 'runs', {

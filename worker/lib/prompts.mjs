@@ -175,30 +175,3 @@ export const PREP_SCHEMA = obj({
   ask_back: strs, watch_out: strs, salary: str,
   sources: { type: 'array', items: obj({ title: str, url: str }) },
 });
-
-/** Aus der freien Beschreibung des perfekten Jobs die Suchfelder vorschlagen. Nichts erfinden, was nicht drinsteht. */
-export const traumjobAuswerten = () => `Du hilfst beim Einrichten einer Jobsuche für den Berufseinstieg in Österreich, Deutschland und der Schweiz. Die Person hat ihren perfekten Job in eigenen Worten beschrieben. Leite daraus die Suchfelder ab.
-
-REGELN
-- Nur was aus der Beschreibung hervorgeht. Was nicht drinsteht, bleibt leer (leerer Text, leere Liste). Nichts erfinden, nicht raten.
-- zielrollen: 1 bis 4 Rollen, so wie sie in Stellenanzeigen heißen (zum Beispiel „Trainee Controlling“, „Junior Consultant“), mit Komma getrennt.
-- stellenarten: nur Werte aus dieser Liste: Trainee, Junior, Graduate, Bezahltes Praktikum, Berufseinstieg.
-- orte: Städte oder Regionen in der genannten Reihenfolge. „Remote“ nur, wenn ausdrücklich gewünscht.
-- start: frühester Start in den Worten der Person, sonst leer.
-- ausschluesse: was die Person ausdrücklich nicht will, mit Komma getrennt.
-- wuensche: alles Weitere, was bei der Auswahl hilft (Branche, Firmengröße, Arbeitszeit, Sprache, Werte), in einem knappen Satz.
-- Schreib Deutsch, ohne Gedankenstriche.`;
-
-export const TRAUMJOB_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['zielrollen', 'stellenarten', 'orte', 'start', 'ausschluesse', 'wuensche'],
-  properties: {
-    zielrollen: { type: 'string' },
-    stellenarten: { type: 'array', items: { type: 'string', enum: ['Trainee', 'Junior', 'Graduate', 'Bezahltes Praktikum', 'Berufseinstieg'] } },
-    orte: { type: 'array', items: { type: 'string' } },
-    start: { type: 'string' },
-    ausschluesse: { type: 'string' },
-    wuensche: { type: 'string' },
-  },
-};

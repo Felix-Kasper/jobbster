@@ -1,8 +1,9 @@
 # Minimale Supabase-Konfiguration, damit die CLI die Funktionen findet (Workflow „Funktionen einspielen“).
+# verify_jwt aus: Beide Funktionen prüfen das Login selbst (wie alle anderen Funktionen im Projekt).
 project_id = "zusage"
 
 [functions.run-now]
-verify_jwt = true
+verify_jwt = false
 
 [functions.profil-vorschlag]
-verify_jwt = true
+verify_jwt = false
