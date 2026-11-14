@@ -2,6 +2,11 @@ name: Worker
 
 on:
   workflow_dispatch:
+    inputs:
+      plan:
+        description: 'Suche für alle aktiven Nutzer jetzt planen'
+        type: boolean
+        default: false
   repository_dispatch:
     types: [auftrag]
   schedule:
@@ -27,7 +32,7 @@ jobs:
       - name: Aufträge abarbeiten
         run: |
           node --version
-          node worker/worker.mjs ${{ github.event.schedule == '30 4 * * *' && '--plan' || '' }}
+          node worker/worker.mjs ${{ (github.event.schedule == '30 4 * * *' || inputs.plan) && '--plan' || '' }}
         env:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
