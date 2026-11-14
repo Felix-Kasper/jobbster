@@ -8,7 +8,7 @@
  *   node worker/worker.mjs --plan   vorher für alle aktiven Nutzer den fälligen Scout-Lauf einreihen
  *
  * Umgebung: SUPABASE_URL, SUPABASE_SERVICE_KEY, ANTHROPIC_API_KEY
- * Optional: SCOUT_VARIANTE (filter|einfach), WORKER_MAX_AUFTRAEGE (8), WORKER_MAX_MINUTEN (25)
+ * Optional: SCOUT_VARIANTE (filter|einfach), SCOUT_MODELL (zum Testen), WORKER_MAX_AUFTRAEGE (8), WORKER_MAX_MINUTEN (25)
  *
  * Im Protokoll stehen nur Kennungen, Mengen und Kosten. Keine Namen, keine Lebensläufe.
  */
@@ -88,7 +88,10 @@ export async function main(env = process.env, argv = process.argv.slice(2)) {
     log: (m) => console.log(`    … ${m}`),
     wartenMaxS: Number(env.WORKER_WARTEN_MAX_S || 90),
   });
-  const cfg = { ...(env.SCOUT_VARIANTE ? { variante: env.SCOUT_VARIANTE } : {}) };
+  const cfg = {
+    ...(env.SCOUT_VARIANTE ? { variante: env.SCOUT_VARIANTE } : {}),
+    ...(/^claude-[a-z0-9-]+$/.test(env.SCOUT_MODELL || '') ? { modellScout: env.SCOUT_MODELL } : {}),
+  };
   const maxAuftraege = Number(env.WORKER_MAX_AUFTRAEGE || 8);
   const ende = Date.now() + Number(env.WORKER_MAX_MINUTEN || 25) * 60_000;
   const jetzt = () => new Date().toISOString();

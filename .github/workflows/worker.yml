@@ -11,6 +11,10 @@ on:
         description: 'Suchart zum Testen (leer = Standard)'
         type: string
         default: ''
+      modell:
+        description: 'Modell für die Suche zum Testen (leer = Standard)'
+        type: string
+        default: ''
   repository_dispatch:
     types: [auftrag]
   schedule:
@@ -42,3 +46,4 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SCOUT_VARIANTE: ${{ inputs.variante || vars.SCOUT_VARIANTE }}
+          SCOUT_MODELL: ${{ inputs.modell }}
