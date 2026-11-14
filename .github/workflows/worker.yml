@@ -7,6 +7,10 @@ on:
         description: 'Suche für alle aktiven Nutzer jetzt planen'
         type: boolean
         default: false
+      variante:
+        description: 'Suchart zum Testen (leer = Standard)'
+        type: string
+        default: ''
   repository_dispatch:
     types: [auftrag]
   schedule:
@@ -37,4 +41,4 @@ jobs:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          SCOUT_VARIANTE: ${{ vars.SCOUT_VARIANTE }}
+          SCOUT_VARIANTE: ${{ inputs.variante || vars.SCOUT_VARIANTE }}
