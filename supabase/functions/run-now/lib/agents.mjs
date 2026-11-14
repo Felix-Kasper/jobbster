@@ -48,6 +48,8 @@ export async function scout({ claude, profil, bekannt = [], signale = '', cfg = 
     werkzeuge(c.variante, { suchen: c.suchen, abrufe: c.abrufe, ...ortFuerSuche(profil) }),
   );
   if (suche.stop !== 'end_turn') hinweise.push(`Suche endete mit ${suche.stop}`);
+  const bloecke = (suche.text.match(/^###/gm) || []).length;
+  hinweise.push(`${suche.suchen} Suchen, ${suche.abrufe} Abrufe, ${bloecke} Kandidaten: ${suche.suchbegriffe.join(' · ')}`);
   if (suche.werkzeugFehler.length) hinweise.push(`Werkzeug-Fehler: ${[...new Set(suche.werkzeugFehler)].join(', ')}`);
 
   let bewertung = null;

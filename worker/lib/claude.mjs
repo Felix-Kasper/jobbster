@@ -100,6 +100,7 @@ export function createClaude({ post, log = () => {}, wartenMaxS = 90 }) {
     let pausiert = [];
     let stop = null;
     const n = { anfragen: 0, tokensEin: 0, tokensAus: 0, suchen: 0, abrufe: 0, usd: 0 };
+    const suchbegriffe = [];
 
     for (let runde = 0; runde < 10; runde++) {
       const body = { model, max_tokens: maxTokens, system, messages: pausiert.length ? [...messages, { role: 'assistant', content: pausiert }] : messages };
@@ -116,6 +117,7 @@ export function createClaude({ post, log = () => {}, wartenMaxS = 90 }) {
       gesamtUsd += kosten(model, u);
       for (const b of res.content || []) {
         if (b.type === 'text') texte.push(b.text);
+        if (b.type === 'server_tool_use' && b.name === 'web_search' && b.input?.query) suchbegriffe.push(String(b.input.query).slice(0, 120));
         const c = b.content;
         if (c && !Array.isArray(c) && typeof c === 'object' && /_error$/.test(c.type || '')) werkzeugFehler.push(c.error_code);
       }
@@ -123,7 +125,7 @@ export function createClaude({ post, log = () => {}, wartenMaxS = 90 }) {
       if (stop !== 'pause_turn') break;
       pausiert = [...pausiert, ...(res.content || [])];
     }
-    return { text: texte.join(''), stop, ms: Date.now() - t0, model, werkzeugFehler, ...n };
+    return { text: texte.join(''), stop, ms: Date.now() - t0, model, werkzeugFehler, suchbegriffe, ...n };
   }
 
   /** Wie zug, probiert aber Werkzeug-Sätze der Reihe nach, falls die API einen ablehnt (400). */
