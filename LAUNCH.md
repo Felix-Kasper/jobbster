@@ -10,9 +10,10 @@ Stand 13.11.2026, 12 Uhr. Was fertig ist und was Felix tun muss, genau in dieser
 | Anmeldung (`signup`), Warteliste, Konto löschen (beendet vorher das Abo) | echt über die Schnittstelle |
 | Bezahlung (`billing`, `stripe-webhook`) | Signatur, Kodierung, Laufzeit: 10 Prüfungen. Gegen echtes Stripe erst mit Konto. |
 | App: Registrierung, Fragebogen mit PDF-Upload, Treffer, Entwurf, PDF und Word, Funnel, Vorbereitung, Konto, Export, Löschen, Admin, Rechtliches | 34 Prüfungen im Browser (Handy und Laptop) gegen nachgebildetes Backend, 18 Unit-Tests, strenge Typen, ESLint ohne Befund, Build, keine bekannten Sicherheitslücken in den Paketen (npm audit) |
-| Worker (tägliche Suche mit „Bewerbungen pro Tag“, Entwurf, Vorbereitung im Hintergrund) | 21 Prüfungen gegen Attrappe |
+| Worker (tägliche Suche mit „Bewerbungen pro Tag“, Entwurf, Vorbereitung im Hintergrund) | 27 Prüfungen gegen Attrappe, dazu echte Läufe am 16.11. |
+| Stellen-Quellen (Arbeitsagentur für Deutschland, EURES mit AMS-Stellen für Österreich) | 19 Tests ohne Netz, Typprüfung, Probe gegen die echten Schnittstellen (Actions → Quellen-Probe) |
 
-**Nicht getestet:** alles mit der echten Claude API und mit echtem Stripe. Das geht erst mit den Schlüsseln (Schritte 1 und 7).
+**Mit der echten Claude API getestet (16.11.):** Suche und Entwurf. **Nicht getestet:** Gesprächsvorbereitung mit echter API und alles mit echtem Stripe.
 
 ## Zeitplan bis zum Start
 
@@ -92,9 +93,19 @@ WKO-Gründerservice, Gewerbe „Dienstleistungen in der automatischen Datenverar
 ## 8. Recht (vor dem ersten zahlenden Nutzer)
 Datenschutz und Bedingungen in `app/src/pages/Legal.tsx` prüfen lassen (Entwürfe von Claude, kein Rechtsrat). Auftragsverarbeitung mit Supabase und Anthropic abschließen (beide bieten das im Dashboard an).
 
+Mit prüfen lassen: Die Stellen kommen aus zwei öffentlichen Schnittstellen ohne eigenen Vertrag (Jobsuche der Bundesagentur für Arbeit, EURES-Portal der EU). Jobbster zeigt Titel, Firma, eine eigene Kurzfassung und den Link zur Originalanzeige. Ob das für ein bezahltes Produkt so in Ordnung ist oder eine Vereinbarung braucht, gehört in die Rechtsprüfung.
+
 ## Kosten im Blick
 - Tageslimit für alle zusammen: `tageslimit_usd` (jetzt 3 $). Ist es erreicht, warten offene Läufe bis zum nächsten Tag. Nach dem Messlauf passend zur Nutzerzahl erhöhen (Befehle in `BETRIEB.md`).
-- Wer 10 Bewerbungen am Tag macht, verursacht deutlich mehr KI-Kosten als bei der alten Planung mit 3 Suchen pro Woche. Der Messlauf zeigt die echte Zahl pro Nutzer, danach entscheiden wir den Preis.
+- Gemessen am 16.11. (Test-Konto, Controlling in Innsbruck und München):
+
+| Was | Kosten | Dauer |
+|---|---|---|
+| Tägliche Suche, 8 bis 10 neue Treffer aus rund 150 echten Anzeigen | 0,006 $ | 40 s |
+| Ein Entwurf (Recherche zur Firma und Anschreiben) | 0,034 bis 0,047 $ | 20 s |
+
+- Pro Nutzer und Monat: Suche rund 0,20 $. Entwürfe je nach Fleiß: 5 am Tag rund 6 $, das Maximum von 12 am Tag rund 15 $. Eine voll ausgenutzte Probewoche kostet bis zu 3,50 $.
+- Vorher (Websuche, mit Nachdenken): Suche 0,23 bis 0,44 $ für 1 bis 2 Treffer, Entwurf 0,07 bis 0,09 $.
 
 ## Bewusst noch nicht drin
 - **Versand aus dem Postfach:** Entscheidung 12.11.: Entwurf, du sendest. Die App öffnet Mail oder Portal mit fertigem Text.

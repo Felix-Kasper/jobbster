@@ -39,3 +39,12 @@ update public.waitlist set invited_at = now() where email = 'ADRESSE';
 
 ## Fehler
 Admin-Bereich in der App zeigt die letzten 20. Protokolle der Funktionen: Supabase → Edge Functions → Logs. Worker: GitHub → Actions → Worker.
+
+## Stellensuche
+Die tägliche Suche holt echte Anzeigen aus zwei öffentlichen Schnittstellen: Jobsuche der Arbeitsagentur (Deutschland) und EURES (Österreich, mit den Stellen des AMS). Die KI plant nur die Suchbegriffe und bewertet die Vorauswahl. Kosten: unter 1 Cent pro Lauf.
+
+- **Findet ein Nutzer nichts?** GitHub → Actions → „Quellen-Probe“ → Run workflow, mit seinen Suchbegriffen und Orten. Der Lauf zeigt, was die Schnittstellen liefern und ob die Links gehen. Er kostet nichts.
+- **Fällt eine Schnittstelle aus**, steht im Protokoll des Workers „Quelle: n von m Anfragen ohne Ergebnis“. Liefert keine Quelle mehr etwas für die Orte eines Nutzers, springt die Websuche als Reserve ein (rund 0,30 $ pro Lauf, findet wenig). Dann zuerst die Probe starten.
+- **Orte außerhalb von Deutschland und Österreich** (zum Beispiel Zürich) laufen immer über die Websuche.
+- Österreich ist dünner abgedeckt als Deutschland: EURES enthält nur Stellen, die dem AMS gemeldet sind.
+- Treffer unter 50 Punkten werden nicht gezeigt (`mindestMatch` in `worker/lib/agents.mjs`). Lieber 7 gute als 10 mit Lückenfüllern.

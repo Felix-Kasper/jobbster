@@ -165,6 +165,7 @@ test('Vorauswahl: Einstieg vor Leitung, bekannte Firmen raus, jede Firma einmal,
   const k = (id, titel, firma, extra = {}) => ({ quelle: 'Arbeitsagentur', id, titel, firma, ort: 'München', land: 'DE', datum: vorTagen(3), url: `https://x/${id}`, beschreibung: '', mail: null, bewerbung: '', ortRang: 0, ...extra });
   const liste = [
     k('0', 'Fachbereichsleitung Controlling & Finanzen', 'Luft gGmbH'),
+    k('01', 'Associate Director Controlling', 'Frisch SE'),
     k('1', 'Senior Controller', 'Gross AG'),
     k('2', 'Junior Controller (m/w/d)', 'Fein GmbH'),
     k('3', 'Controller Vertrieb Außendienst', 'Aussen KG'),

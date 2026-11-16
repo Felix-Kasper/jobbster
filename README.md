@@ -9,6 +9,8 @@ Stand 11.11.2026, Sprint Tag 1. Getrennt von JARVIS.
 | `supabase/` | Schema mit RLS, Speicher, Rechte (`001`, `002`) und die Edge Function `signup` (Anmeldung mit Einladungscode) |
 | `worker/` | Arbeitet die Warteschlange ab: Scout, Entwurf, Gesprächsvorbereitung. Läuft in GitHub Actions. |
 | `worker/lib/prompts.mjs` | Prompt-Vorlagen. Alles Persönliche kommt aus dem Profil des Nutzers. |
+| `worker/lib/quellen.mjs` | Stellen-Quellen: echte Anzeigen aus der Jobsuche der Arbeitsagentur (DE) und aus EURES (AT, mit AMS-Stellen). Vorauswahl ohne KI, die KI bewertet nur. |
+| `worker/tools/quellen-probe.mjs` | Diagnose gegen die echten Schnittstellen, ohne KI und ohne Schlüssel |
 | `spike/` | Messlauf gegen die echte API mit erfundenem Profil |
 | `.github/workflows/worker.yml` | Zeitplan und Anstoß für den Worker |
 
