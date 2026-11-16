@@ -355,7 +355,9 @@ export async function sammle({ holen, begriffe, orte, mitPraktikum = true, jetzt
   return { kandidaten: [...gefunden.values()], hinweise, anfragen: geplant.length, beantwortet: antworten.filter((a) => a.ok).length };
 }
 
-const HOCH = /\b(senior|sr|leiter|leiterin|leitung|head|lead|director|direktor|chef|principal|teamleiter|teamleitung|abteilungsleiter|bereichsleiter|geschaftsfuhrer|experte|expert|vp)\b/;
+// Leitung auch als Wortende: Fachbereichsleitung, Teamleiterin, Abteilungsleiter.
+// „Manager“ fehlt mit Absicht: Viele Einstiegsrollen heißen so (Account Manager, Produktmanager). Das entscheidet die Bewertung.
+const HOCH = /\b(senior|sr|head|lead|director|direktor|chef|principal|geschaftsfuhrer|geschaftsfuhrung|experte|expert|vp)\b|(leiter|leiterin|leitung)\b/;
 const EINSTIEG = /\b(junior|jr|trainee|traineeprogramm|graduate|einsteiger|berufseinsteiger|berufseinstieg|absolvent|absolventen|young professional|nachwuchs|associate|praktikum|praktikant|internship|intern)\b/;
 const PRAKTIKUM = /\b(praktikum|praktikant|praktikantin|internship|intern|pflichtpraktikum)\b/;
 const WERKSTUDENT = /\b(werkstudent|werkstudentin|working student|studentische|aushilfe|minijob)\b/;

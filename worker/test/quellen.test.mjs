@@ -164,6 +164,7 @@ test('Sammeln: Budget begrenzt die Zahl der Anfragen', async () => {
 test('Vorauswahl: Einstieg vor Leitung, bekannte Firmen raus, jede Firma einmal, Ausschlüsse zählen', () => {
   const k = (id, titel, firma, extra = {}) => ({ quelle: 'Arbeitsagentur', id, titel, firma, ort: 'München', land: 'DE', datum: vorTagen(3), url: `https://x/${id}`, beschreibung: '', mail: null, bewerbung: '', ortRang: 0, ...extra });
   const liste = [
+    k('0', 'Fachbereichsleitung Controlling & Finanzen', 'Luft gGmbH'),
     k('1', 'Senior Controller', 'Gross AG'),
     k('2', 'Junior Controller (m/w/d)', 'Fein GmbH'),
     k('3', 'Controller Vertrieb Außendienst', 'Aussen KG'),
@@ -260,6 +261,14 @@ test('Scout: Treffer aus den Quellen, ohne Websuche, für Bruchteile eines Cents
   assert.ok(!ki.zuege[1].user.includes('Schon Da GmbH'));
   assert.match(r.hinweise.join('\n'), /Quellen: \d+ Anfragen \(Controlling · Controller · Financial Analyst in Innsbruck, München\), 5 Anzeigen, 3 in der Bewertung/);
   assert.ok(anfragen.length <= Q.GRENZEN.anfragen + 28);
+});
+
+test('Scout: schwache Treffer werden nicht aufgefüllt', async () => {
+  const { holen } = attrappe({ eures: { Controller: [euresEintrag('e1', 'Junior Controller', 'Tirolwerk GmbH'), euresEintrag('e2', 'Controller/in', 'Alpen AG')] } });
+  const ki = kiAttrappe({ bewerte: () => [{ nr: 1, rolle: 30, lebenslauf: 10, chance: 20, ort: 10 }, { nr: 2, rolle: 15, lebenslauf: 8, chance: 10, ort: 10 }] });
+  const r = await scout({ claude: ki, profil: PROFIL, holen });
+  assert.deepEqual(r.leads.map((l) => [l.company, l.match_score]), [['Tirolwerk GmbH', 70]]);
+  assert.match(r.hinweise.join('\n'), /1 Treffer unter 50 Punkten nicht übernommen/);
 });
 
 test('Scout: Quellen antworten, finden aber nichts Neues: keine teure Websuche', async () => {

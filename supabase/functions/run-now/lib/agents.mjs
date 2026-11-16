@@ -19,6 +19,7 @@ export const STANDARD = {
   abrufe: 6,
   quellen: true, // echte Anzeigen aus Arbeitsagentur und EURES
   websucheWennLeer: true, // Websuche nur, wenn keine Quelle die Orte abdeckt
+  mindestMatch: 50, // Treffer darunter werden nicht gezeigt: lieber 7 gute als 10 mit Lückenfüllern
 };
 
 /** Bewerbungen pro Tag laut Profil: so viele Treffer sucht der tägliche Lauf. Empfohlen 10, erlaubt 1 bis 12. */
@@ -112,7 +113,9 @@ async function scoutAusQuellen({ claude, profil, profilT, bekannt, signale, c, h
   if (!daten) hinweise.push(`Bewertung lieferte kein lesbares JSON (${bewertung.stop})`);
   else if (bewertung.stop === 'max_tokens') hinweise.push('Bewertung abgeschnitten, vollständige Treffer gerettet');
   hinweise.push(`Bewertung: ${daten?.leads?.length ?? 0} Treffer, ${daten?.abgelehnt?.length ?? 0} abgelehnt, ${bewertung.tokensAus} Tokens Ausgabe (${bewertung.tokensDenken || 0} davon Nachdenken), ${Math.round(bewertung.ms / 1000)} s`);
-  const leads = leadsAusBewertung(daten?.leads, { bekannt, kandidaten });
+  const alle = leadsAusBewertung(daten?.leads, { bekannt, kandidaten });
+  const leads = alle.filter((l) => l.match_score >= c.mindestMatch);
+  if (alle.length > leads.length) hinweise.push(`${alle.length - leads.length} Treffer unter ${c.mindestMatch} Punkten nicht übernommen`);
   return { abgedeckt: true, ergebnis: { leads: leads.slice(0, c.treffer), abgelehnt: daten?.abgelehnt || [], hinweise, werkzeug: 'quellen', nutzung: summe(plan, bewertung), model: c.modellScout } };
 }
 
@@ -263,6 +266,9 @@ export async function entwurf({ claude, profil, lead, cfg = {} }) {
     if (kuerzung.text.trim().length > 400) brief = ohneStrich(kuerzung.text.trim());
     if (brief.length > 2000) hinweise.push(`Anschreiben bleibt mit ${brief.length} Zeichen zu lang`);
   }
+
+  const teil = (name, z) => (z ? `${name} ${z.usd.toFixed(4)} $ (${z.tokensEin} ein, ${z.tokensAus} aus, davon ${z.tokensDenken || 0} Nachdenken${z.suchen ? `, ${z.suchen} Suchen` : ''})` : null);
+  hinweise.push(['Kosten:', teil('Recherche', recherche), teil('Text', text), teil('Kürzung', kuerzung)].filter(Boolean).join(' '));
 
   return {
     felder: {
