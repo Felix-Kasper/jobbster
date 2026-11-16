@@ -1,0 +1,16 @@
+name: Quellen-Probe
+
+# Diagnose von Hand: prüft, welche Stellen-Schnittstellen antworten. Braucht keine Secrets, schreibt nichts.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: node worker/tools/quellen-probe.mjs
