@@ -239,8 +239,9 @@ export async function entwurf({ claude, profil, lead, cfg = {} }) {
   let recherche = null;
   try {
     recherche = await claude.zugMitWerkzeugen(
-      { model: c.modellRecherche, system: P.schreiberRecherche({ heute }), user: `PROFIL\n${profilT}\n\n${stelle}`, maxTokens: 6000 },
-      werkzeuge('einfach', { suchen: 3, abrufe: 0, ...ortFuerSuche(profil) }),
+      // Jede Suche kostet 1 Cent und ist damit der teuerste Teil eines Entwurfs: höchstens zwei, ohne Nachdenken davor
+      { model: c.modellRecherche, system: P.schreiberRecherche({ heute }), user: `PROFIL\n${profilT}\n\n${stelle}`, maxTokens: 3000, denken: false },
+      werkzeuge('einfach', { suchen: 2, abrufe: 0, ...ortFuerSuche(profil) }),
     );
   } catch (e) {
     hinweise.push(`Recherche fehlgeschlagen: ${String(e.message).slice(0, 120)}`);
