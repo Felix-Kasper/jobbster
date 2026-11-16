@@ -8,7 +8,8 @@
  *   node worker/worker.mjs --plan   vorher für alle aktiven Nutzer den fälligen Scout-Lauf einreihen
  *
  * Umgebung: SUPABASE_URL, SUPABASE_SERVICE_KEY, ANTHROPIC_API_KEY
- * Optional: SCOUT_VARIANTE (filter|einfach), SCOUT_MODELL (zum Testen), SCOUT_QUELLEN=aus (nur Websuche), WORKER_MAX_AUFTRAEGE (8), WORKER_MAX_MINUTEN (25)
+ * Optional: SCOUT_VARIANTE (filter|einfach), SCOUT_MODELL (zum Testen), SCOUT_QUELLEN=aus (nur Websuche),
+ *   TEXT_MODELL, TEXT_AUFWAND (low|medium|high), TEXT_DENKEN=aus (Anschreiben, zum Testen), WORKER_MAX_AUFTRAEGE (8), WORKER_MAX_MINUTEN (25)
  *
  * Im Protokoll stehen nur Kennungen, Mengen und Kosten. Keine Namen, keine Lebensläufe.
  */
@@ -97,6 +98,9 @@ export async function main(env = process.env, argv = process.argv.slice(2), { ho
     ...(env.SCOUT_VARIANTE ? { variante: env.SCOUT_VARIANTE } : {}),
     ...(/^claude-[a-z0-9-]+$/.test(env.SCOUT_MODELL || '') ? { modellScout: env.SCOUT_MODELL } : {}),
     ...(env.SCOUT_QUELLEN === 'aus' ? { quellen: false } : {}),
+    ...(/^claude-[a-z0-9-]+$/.test(env.TEXT_MODELL || '') ? { modellText: env.TEXT_MODELL } : {}),
+    ...(['low', 'medium', 'high'].includes(env.TEXT_AUFWAND || '') ? { textAufwand: env.TEXT_AUFWAND } : {}),
+    ...(env.TEXT_DENKEN === 'aus' ? { textDenken: false } : {}),
   };
   const maxAuftraege = Number(env.WORKER_MAX_AUFTRAEGE || 8);
   const ende = Date.now() + Number(env.WORKER_MAX_MINUTEN || 25) * 60_000;

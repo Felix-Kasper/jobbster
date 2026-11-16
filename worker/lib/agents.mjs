@@ -19,6 +19,8 @@ export const STANDARD = {
   abrufe: 6,
   quellen: true, // echte Anzeigen aus Arbeitsagentur und EURES
   websucheWennLeer: true, // Websuche nur, wenn keine Quelle die Orte abdeckt
+  textDenken: true, // Nachdenken vor dem Anschreiben
+  textAufwand: null, // null = Standard des Modells
   mindestMatch: 50, // Treffer darunter werden nicht gezeigt: lieber 7 gute als 10 mit Lückenfüllern
 };
 
@@ -250,6 +252,8 @@ export async function entwurf({ claude, profil, lead, cfg = {} }) {
     user: `PROFIL\n${profilT}\n\n${stelle}\n\nRECHERCHE ZUR FIRMA\n${recherche?.text || 'keine'}`,
     format: P.ENTWURF_SCHEMA,
     maxTokens: 8000,
+    denken: c.textDenken,
+    aufwand: c.textAufwand,
   });
   const e = leseJson(text.text);
   if (!e) throw new Error(`Entwurf lieferte kein lesbares JSON (${text.stop})`);

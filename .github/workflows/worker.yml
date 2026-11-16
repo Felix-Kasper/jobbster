@@ -15,6 +15,10 @@ on:
         description: 'Modell für die Suche zum Testen (leer = Standard)'
         type: string
         default: ''
+      text:
+        description: 'Anschreiben zum Testen: Modell,Aufwand,Denken (zum Beispiel claude-sonnet-5-5,low,aus)'
+        type: string
+        default: ''
   repository_dispatch:
     types: [auftrag]
   schedule:
@@ -43,6 +47,8 @@ jobs:
       - name: Aufträge abarbeiten
         run: |
           node --version
+          IFS=, read -r TEXT_MODELL TEXT_AUFWAND TEXT_DENKEN <<< "$TEXT_TEST"
+          export TEXT_MODELL TEXT_AUFWAND TEXT_DENKEN
           node worker/worker.mjs ${{ (github.event.schedule == '30 4 * * *' || inputs.plan) && '--plan' || '' }}
         env:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
@@ -50,3 +56,4 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SCOUT_VARIANTE: ${{ inputs.variante || vars.SCOUT_VARIANTE }}
           SCOUT_MODELL: ${{ inputs.modell }}
+          TEXT_TEST: ${{ inputs.text }}
