@@ -31,4 +31,9 @@ if (eures) {
   const d = await fetch(`https://europa.eu/eures/api/jv-searchengine/public/jv/id/${encodeURIComponent(eures.id)}?lang=de`, { headers: { Accept: 'application/json' } }).then((r) => r.json()).catch((e) => ({ fehler: e.message }));
   console.log('\nEURES roh:', JSON.stringify(d, (k, v) => (k === 'description' && typeof v === 'string' ? `${v.slice(0, 80)} …` : v)).slice(0, 2500));
 }
+// Führen die Links, die Nutzer anklicken, wirklich zu einer Seite?
+for (const k of zeigen) {
+  const status = await fetch(k.url, { redirect: 'follow', headers: { 'User-Agent': 'Mozilla/5.0 (Jobbster Linkprüfung)' } }).then((r) => r.status).catch((e) => e.message);
+  console.log(`Link ${status}: ${k.url}`);
+}
 if (!roh.beantwortet) process.exitCode = 1;
