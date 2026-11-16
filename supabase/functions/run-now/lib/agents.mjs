@@ -97,11 +97,19 @@ async function scoutAusQuellen({ claude, profil, profilT, bekannt, signale, c, h
   const bewertung = await claude.zug({
     model: c.modellScout,
     system: P.scoutBewertung({ heute: c.heute }),
-    user: [`PROFIL\n${profilT}`, signale ? `SIGNALE (was die Person bisher beworben oder aussortiert hat)\n${signale}` : '', `TREFFERLISTE\n${Q.trefferliste(kandidaten)}`].filter(Boolean).join('\n\n'),
+    user: [
+      `PROFIL\n${profilT}`,
+      signale ? `SIGNALE (was die Person bisher beworben oder aussortiert hat)\n${signale}` : '',
+      `TREFFERLISTE\n${Q.trefferliste(kandidaten)}`,
+      // Die Ausgabe ist der teure und langsame Teil: nur die besten ausführlich, der Rest in einem Halbsatz
+      `Die Liste hat ${kandidaten.length} Treffer. Gib nur die ${Math.min(kandidaten.length, c.treffer + 2)} besten in leads aus, beste zuerst. Passende, die es nicht unter die besten schaffen, lässt du weg. Unpassende kommen mit Grund in höchstens 8 Wörtern in abgelehnt.`,
+    ].filter(Boolean).join('\n\n'),
     format: P.LEADS_SCHEMA,
+    maxTokens: 20000,
   });
-  const daten = leseJson(bewertung.text);
+  const daten = leseJson(bewertung.text) ?? retteLeads(bewertung.text);
   if (!daten) hinweise.push(`Bewertung lieferte kein lesbares JSON (${bewertung.stop})`);
+  else if (bewertung.stop === 'max_tokens') hinweise.push('Bewertung abgeschnitten, vollständige Treffer gerettet');
   const leads = leadsAusBewertung(daten?.leads, { bekannt, kandidaten });
   return { abgedeckt: true, ergebnis: { leads: leads.slice(0, c.treffer), abgelehnt: daten?.abgelehnt || [], hinweise, werkzeug: 'quellen', nutzung: summe(plan, bewertung), model: c.modellScout } };
 }
@@ -141,6 +149,16 @@ async function scoutAusWebsuche({ claude, profil, profilT, bekannt, signale, c }
   }
   const leads = leadsAusBewertung(daten.leads, { bekannt });
   return { leads: leads.slice(0, c.treffer), abgelehnt: daten.abgelehnt || [], hinweise, werkzeug: suche.werkzeug, nutzung: summe(suche, bewertung), model: c.modellScout };
+}
+
+/** Abgeschnittene Antwort (max_tokens): alle vollständig ausgegebenen Treffer behalten statt alles zu verwerfen. */
+export function retteLeads(text) {
+  const t = String(text ?? '');
+  for (let i = t.lastIndexOf('},'); i > 0; i = t.lastIndexOf('},', i - 1)) {
+    const gelesen = leseJson(`${t.slice(0, i + 1)}],"abgelehnt":[]}`);
+    if (Array.isArray(gelesen?.leads) && gelesen.leads.length) return gelesen;
+  }
+  return null;
 }
 
 /**

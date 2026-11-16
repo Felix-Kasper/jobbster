@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as Q from '../lib/quellen.mjs';
-import { scout, leadsAusBewertung } from '../lib/agents.mjs';
+import { scout, leadsAusBewertung, retteLeads } from '../lib/agents.mjs';
 
 const JETZT = Date.parse('2026-11-16T10:00:00Z');
 const vorTagen = (n) => new Date(JETZT - n * 86_400_000).toISOString().slice(0, 10);
@@ -232,6 +232,14 @@ test('Treffer: Fakten kommen aus der Quelle, nicht von der KI', () => {
   assert.equal(leadsAusBewertung([ki({ nr: 2, company: 'unbekannt' })], { kandidaten }).length, 0, 'ohne Firmennamen kein Treffer');
 });
 
+test('Abgeschnittene Bewertung: vollständige Treffer bleiben erhalten', () => {
+  const voll = JSON.stringify({ leads: [{ nr: 1, company: 'A', keywords: [{ term: 'x', matched: true }], why_fit: 'a' }, { nr: 2, company: 'B', keywords: [{ term: 'y', matched: false }], why_fit: 'b' }, { nr: 3, company: 'C', keywords: [], why_fit: 'lang' }], abgelehnt: [] });
+  const schnitt = voll.slice(0, voll.indexOf('"company":"C"') + 8);
+  assert.deepEqual(retteLeads(schnitt).leads.map((l) => l.nr), [1, 2]);
+  assert.equal(retteLeads('{"leads":[{"nr":1,"comp'), null);
+  assert.equal(retteLeads(''), null);
+});
+
 // --- Scout von Anfang bis Ende ------------------------------------------------------------------------------------
 test('Scout: Treffer aus den Quellen, ohne Websuche, für Bruchteile eines Cents', async () => {
   const { holen, anfragen } = attrappe({
@@ -248,6 +256,7 @@ test('Scout: Treffer aus den Quellen, ohne Websuche, für Bruchteile eines Cents
   assert.equal(ki.zuege.length, 2, 'ein Suchplan, eine Bewertung');
   assert.ok(r.nutzung.usd < 0.01);
   assert.ok(ki.zuege[1].user.includes('### 1 | Tirolwerk GmbH | Junior Controller'));
+  assert.match(ki.zuege[1].user, /Gib nur die 3 besten in leads aus/);
   assert.ok(!ki.zuege[1].user.includes('Schon Da GmbH'));
   assert.match(r.hinweise.join('\n'), /Quellen: \d+ Anfragen \(Controlling · Controller · Financial Analyst in Innsbruck, München\), 5 Anzeigen, 3 in der Bewertung/);
   assert.ok(anfragen.length <= Q.GRENZEN.anfragen + 28);
