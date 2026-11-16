@@ -1,8 +1,18 @@
 name: Quellen-Probe
 
-# Diagnose von Hand: prüft, welche Stellen-Schnittstellen antworten. Braucht keine Secrets, schreibt nichts.
+# Diagnose von Hand: fragt die Stellen-Quellen (Arbeitsagentur, EURES) wirklich ab und zeigt, was der Scout sehen würde.
+# Braucht keine Secrets, nutzt keine KI, schreibt nichts. Schlägt fehl, wenn keine Quelle antwortet.
 on:
   workflow_dispatch:
+    inputs:
+      begriffe:
+        description: 'Suchbegriffe, mit Komma getrennt'
+        type: string
+        default: 'Controller,Controlling'
+      orte:
+        description: 'Orte, mit Komma getrennt'
+        type: string
+        default: 'Innsbruck,München'
 
 permissions:
   contents: read
@@ -13,4 +23,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - run: node worker/tools/quellen-probe.mjs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node worker/tools/quellen-probe.mjs "$BEGRIFFE" "$ORTE"
+        env:
+          BEGRIFFE: ${{ inputs.begriffe }}
+          ORTE: ${{ inputs.orte }}

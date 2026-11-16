@@ -23,6 +23,7 @@ jobs:
         run: |
           node worker/test/worker.test.mjs
           node worker/test/stripe.test.mjs
+          node --test worker/test/quellen.test.mjs
       - name: App installieren
         working-directory: app
         run: npm ci
@@ -30,6 +31,7 @@ jobs:
         working-directory: app
         run: |
           npx tsc --noEmit
+          npx tsc --noEmit --allowJs --checkJs --strict --target es2022 --module nodenext --moduleResolution nodenext --lib es2023,dom,dom.iterable --skipLibCheck ../worker/lib/quellen.mjs
           npx eslint .
           npx vitest run
           npx vite build
@@ -42,5 +44,5 @@ jobs:
       - name: Server-Funktionen gleich wie geteilte Bibliothek
         run: |
           for d in billing stripe-webhook delete-account; do cmp supabase/functions/_shared/stripe.mjs supabase/functions/$d/stripe.mjs; done
-          for f in claude agents prompts; do cmp worker/lib/$f.mjs supabase/functions/run-now/lib/$f.mjs; done
+          for f in claude agents prompts quellen; do cmp worker/lib/$f.mjs supabase/functions/run-now/lib/$f.mjs; done
           for f in claude traumjob; do cmp worker/lib/$f.mjs supabase/functions/profil-vorschlag/lib/$f.mjs; done

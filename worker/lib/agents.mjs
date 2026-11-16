@@ -2,12 +2,12 @@
 // Kein Datenbankzugriff hier. Das macht worker.mjs (oder die Edge Function).
 import { HAIKU, SONNET, werkzeuge, leseJson, summe } from './claude.mjs';
 import * as P from './prompts.mjs';
+import * as Q from './quellen.mjs';
 
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, Number.isFinite(Number(n)) ? Math.round(Number(n)) : 0));
 const datum = (s) => (/^\d{4}-\d{2}-\d{2}$/.test(s || '') && !Number.isNaN(Date.parse(s)) ? s : null);
 const leer = (s) => (s && String(s).trim() && !/^unbekannt$/i.test(String(s).trim()) ? String(s).trim() : null);
 const ohneStrich = (s) => String(s || '').replace(/\s[–—]\s/g, ', ').replace(/[–—]/g, '-');
-const firmaKey = (s) => String(s || '').toLowerCase().replace(/\(.*?\)|\b(gmbh|mbh|ag|se|kg|kgaa|co|inc|ltd|group|gruppe|holding)\b|[^a-z0-9äöüß]/g, '');
 
 export const STANDARD = {
   modellScout: HAIKU,
@@ -17,6 +17,8 @@ export const STANDARD = {
   treffer: 10,
   suchen: 10,
   abrufe: 6,
+  quellen: true, // echte Anzeigen aus Arbeitsagentur und EURES
+  websucheWennLeer: true, // Websuche nur, wenn keine Quelle die Orte abdeckt
 };
 
 /** Bewerbungen pro Tag laut Profil: so viele Treffer sucht der tägliche Lauf. Empfohlen 10, erlaubt 1 bis 12. */
@@ -28,14 +30,80 @@ function ortFuerSuche(profil) {
   return { land: w.land || 'AT', zeitzone: w.zeitzone || 'Europe/Vienna' };
 }
 
-/** Scout: Suche mit Werkzeugen, dann Bewertung als strukturierte Ausgabe. */
-export async function scout({ claude, profil, bekannt = [], signale = '', cfg = {} }) {
+/**
+ * Scout: tägliche Stellensuche.
+ * 1. Echte Anzeigen aus den Stellen-Quellen (Arbeitsagentur, EURES), ohne KI vorsortiert, dann von der KI bewertet.
+ * 2. Nur wenn keine Quelle die Orte des Profils abdeckt (anderes Land, Ausfall): Websuche als Reserve (teurer, findet weniger).
+ *    Liefern die Quellen an einem Tag einfach nichts Neues, bleibt es dabei: Das ist ehrlicher und kostet nichts.
+ */
+export async function scout({ claude, profil, bekannt = [], signale = '', cfg = {}, holen = globalThis.fetch }) {
   const ziel = cfg.treffer ?? proTag(profil);
   const c = { ...STANDARD, suchen: clamp(ziel + 2, 6, 14), ...cfg, treffer: ziel };
-  const heute = c.heute || new Date().toISOString().slice(0, 10);
-  const hinweise = [];
+  c.heute = c.heute || new Date().toISOString().slice(0, 10);
   const profilT = P.profilText(profil);
 
+  if (c.quellen) {
+    const r = await scoutAusQuellen({ claude, profil, profilT, bekannt, signale, c, holen });
+    if (r.abgedeckt || !c.websucheWennLeer) return r.ergebnis;
+    const web = await scoutAusWebsuche({ claude, profil, profilT, bekannt, signale, c });
+    return { ...web, hinweise: [...r.ergebnis.hinweise, 'Quellen decken die Orte nicht ab, Websuche als Reserve', ...web.hinweise], nutzung: summe(r.ergebnis.nutzung, web.nutzung) };
+  }
+  return scoutAusWebsuche({ claude, profil, profilT, bekannt, signale, c });
+}
+
+/** Suchbegriffe: aus den Zielrollen abgeleitet, von der KI um Synonyme ergänzt. Fällt die KI aus, reichen die eigenen. */
+async function suchbegriffe({ claude, profil, profilT, c, hinweise }) {
+  const eigene = Q.begriffeAusRollen(profil.preferences?.zielrollen);
+  let plan = null;
+  try {
+    plan = await claude.zug({ model: c.modellScout, system: P.scoutSuchplan(), user: `PROFIL\n${profilT.slice(0, 6000)}`, format: P.SUCHPLAN_SCHEMA, maxTokens: 400 });
+  } catch (e) {
+    hinweise.push(`Suchplan ohne KI (${String(e.message).slice(0, 80)})`);
+  }
+  const vonKi = leseJson(plan?.text ?? '')?.begriffe;
+  return { begriffe: Q.begriffeMischen(eigene, Array.isArray(vonKi) ? vonKi : []), plan };
+}
+
+async function scoutAusQuellen({ claude, profil, profilT, bekannt, signale, c, holen }) {
+  const w = profil.preferences || {};
+  const hinweise = [];
+  const leer = (nutzung, abgedeckt = false) => ({ abgedeckt, ergebnis: { leads: [], abgelehnt: [], hinweise, werkzeug: 'quellen', nutzung, model: c.modellScout } });
+
+  const orte = Q.ortPlan(w.orte, w.land);
+  if (!orte.length) {
+    hinweise.push('Profil ohne Ort für die Stellen-Quellen');
+    return leer(summe());
+  }
+  const { begriffe, plan } = await suchbegriffe({ claude, profil, profilT, c, hinweise });
+  if (!begriffe.length) {
+    hinweise.push('Profil ohne Zielrollen für die Stellen-Quellen');
+    return leer(summe(plan));
+  }
+
+  const arten = (Array.isArray(w.stellenarten) ? w.stellenarten : []).join(' ').toLowerCase();
+  const roh = await Q.sammle({ holen, begriffe, orte, mitPraktikum: !arten || /trainee|praktik|graduate/.test(arten) });
+  hinweise.push(...roh.hinweise);
+  const erfahren = /senior|leitung|führung|fuehrung|erfahren/i.test(`${w.level ?? ''}`);
+  const auswahl = Q.vorauswahl(roh.kandidaten, { begriffe, bekannt, ausschluesse: w.ausschluesse, erfahren, max: clamp(c.treffer * 2 + 4, 12, 28) });
+  const { kandidaten, fehlgeschlagen } = await Q.anreichern(holen, auswahl);
+  if (fehlgeschlagen) hinweise.push(`Quelle: ${fehlgeschlagen} Anzeigen ohne Details`);
+  hinweise.push(`Quellen: ${roh.anfragen} Anfragen (${begriffe.join(' · ')} in ${orte.map((o) => o.name).join(', ')}), ${roh.kandidaten.length} Anzeigen, ${kandidaten.length} in der Bewertung`);
+  if (!kandidaten.length) return leer(summe(plan), roh.beantwortet > 0);
+
+  const bewertung = await claude.zug({
+    model: c.modellScout,
+    system: P.scoutBewertung({ heute: c.heute }),
+    user: [`PROFIL\n${profilT}`, signale ? `SIGNALE (was die Person bisher beworben oder aussortiert hat)\n${signale}` : '', `TREFFERLISTE\n${Q.trefferliste(kandidaten)}`].filter(Boolean).join('\n\n'),
+    format: P.LEADS_SCHEMA,
+  });
+  const daten = leseJson(bewertung.text);
+  if (!daten) hinweise.push(`Bewertung lieferte kein lesbares JSON (${bewertung.stop})`);
+  const leads = leadsAusBewertung(daten?.leads, { bekannt, kandidaten });
+  return { abgedeckt: true, ergebnis: { leads: leads.slice(0, c.treffer), abgelehnt: daten?.abgelehnt || [], hinweise, werkzeug: 'quellen', nutzung: summe(plan, bewertung), model: c.modellScout } };
+}
+
+async function scoutAusWebsuche({ claude, profil, profilT, bekannt, signale, c }) {
+  const hinweise = [];
   const user = [
     `PROFIL\n${profilT}`,
     bekannt.length ? `SCHON BEKANNT (nicht erneut aufnehmen)\n${bekannt.slice(0, 120).join('; ')}` : '',
@@ -44,13 +112,12 @@ export async function scout({ claude, profil, bekannt = [], signale = '', cfg = 
   ].filter(Boolean).join('\n\n');
 
   const suche = await claude.zugMitWerkzeugen(
-    { model: c.modellScout, system: P.scoutSuche({ heute, treffer: c.treffer, suchen: c.suchen, abrufe: c.abrufe }), user },
+    { model: c.modellScout, system: P.scoutSuche({ heute: c.heute, treffer: c.treffer, suchen: c.suchen, abrufe: c.abrufe }), user },
     werkzeuge(c.variante, { suchen: c.suchen, abrufe: c.abrufe, ...ortFuerSuche(profil) }),
   );
   if (suche.stop !== 'end_turn') hinweise.push(`Suche endete mit ${suche.stop}`);
   const bloecke = (suche.text.match(/^###/gm) || []).length;
   hinweise.push(`${suche.suchen} Suchen, ${suche.abrufe} Abrufe, ${bloecke} Kandidaten: ${suche.suchbegriffe.join(' · ')}`);
-  if (bloecke < c.treffer) { const vor = suche.text.split(/^###/m)[0].replace(/\s+/g, ' ').trim().slice(-400); if (vor) hinweise.push(`Vor der Liste: ${vor}`); }
   if (suche.werkzeugFehler.length) hinweise.push(`Werkzeug-Fehler: ${[...new Set(suche.werkzeugFehler)].join(', ')}`);
 
   let bewertung = null;
@@ -58,7 +125,7 @@ export async function scout({ claude, profil, bekannt = [], signale = '', cfg = 
   if (suche.text.includes('###')) {
     bewertung = await claude.zug({
       model: c.modellScout,
-      system: P.scoutBewertung({ heute }),
+      system: P.scoutBewertung({ heute: c.heute }),
       user: `PROFIL\n${profilT}\n\nTREFFERLISTE\n${suche.text}`,
       format: P.LEADS_SCHEMA,
     });
@@ -68,41 +135,53 @@ export async function scout({ claude, profil, bekannt = [], signale = '', cfg = 
   } else {
     hinweise.push('Suche lieferte keine Trefferliste');
   }
+  const leads = leadsAusBewertung(daten.leads, { bekannt });
+  return { leads: leads.slice(0, c.treffer), abgelehnt: daten.abgelehnt || [], hinweise, werkzeug: suche.werkzeug, nutzung: summe(suche, bewertung), model: c.modellScout };
+}
 
-  const gesehen = new Set(bekannt.map(firmaKey));
+/**
+ * Bewertung der KI in saubere Treffer für die Datenbank wandeln.
+ * Mit `kandidaten` (aus den Quellen) kommen die Fakten aus der Schnittstelle, nicht von der KI:
+ * Link, Datum, Quelle, Ort und Kontakt lassen sich so nicht erfinden. Die KI liefert Bewertung und Texte.
+ */
+export function leadsAusBewertung(roh, { bekannt = [], kandidaten = null } = {}) {
+  const gesehen = new Set(bekannt.map(Q.firmaKey));
   const leads = [];
-  for (const l of daten.leads || []) {
-    const key = firmaKey(l.company);
-    if (!key || !leer(l.title) || gesehen.has(key)) continue;
+  for (const l of roh || []) {
+    const k = kandidaten ? kandidaten[Number(l.nr) - 1] ?? kandidaten.find((x) => x.url === l.url) : null;
+    if (kandidaten && !k) continue; // Treffer, den es in der Liste nicht gab
+    const company = leer(k?.firma) ?? leer(l.company);
+    const title = leer(k?.titel) ?? leer(l.title);
+    const key = Q.firmaKey(company);
+    if (!key || !title || gesehen.has(key)) continue;
     gesehen.add(key);
-    const url = /^https?:\/\//i.test(l.url || '') ? l.url.trim() : null;
+    const url = k?.url ?? (/^https?:\/\//i.test(l.url || '') ? l.url.trim() : null);
     if (!url) continue; // ohne Link zur Anzeige ist ein Treffer nichts wert
-    const mail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(l.apply_email || '') ? l.apply_email.trim() : null;
+    const mail = [k?.mail, l.apply_email].find((m) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(m || ''))?.trim() ?? null;
+    const location = leer(k?.ort) ?? leer(l.location);
     leads.push({
-      dedup_key: `stelle|${l.company}|${l.title}|${leer(l.location) ?? ''}`.toLowerCase().replace(/\s+/g, ' ').trim(),
+      dedup_key: `stelle|${company}|${title}|${location ?? ''}`.toLowerCase().replace(/\s+/g, ' ').trim(),
       kind: 'stelle',
-      source: leer(l.source),
-      company: l.company.trim(),
-      title: l.title.trim(),
-      location: leer(l.location),
+      source: leer(k?.quelle) ?? leer(l.source),
+      company,
+      title,
+      location,
       url,
       apply_channel: l.apply_channel === 'email' && mail ? 'email' : l.apply_channel === 'linkedin' ? 'linkedin' : 'portal',
       apply_email: mail,
-      posted_at: datum(l.posted_at),
+      posted_at: datum(k?.datum ?? l.posted_at),
       deadline: datum(l.deadline),
       salary: leer(l.salary),
       language: l.language === 'en' ? 'en' : 'de',
       match_score: clamp(l.rolle, 0, 35) + clamp(l.lebenslauf, 0, 20) + clamp(l.chance, 0, 35) + clamp(l.ort, 0, 10),
-      keywords: (l.keywords || []).slice(0, 15).map((k) => ({ term: String(k.term).slice(0, 60), matched: Boolean(k.matched) })),
+      keywords: (l.keywords || []).slice(0, 15).map((x) => ({ term: String(x.term).slice(0, 60), matched: Boolean(x.matched) })),
       summary: ohneStrich(l.summary),
       requirements: (l.requirements || []).map((x) => `- ${ohneStrich(x)}`).join('\n'),
       why_fit: ohneStrich(l.why_fit),
-      pre_info: [l.verified_online ? '' : 'Hinweis: Anzeige nicht geprüft, vor dem Bewerben öffnen.', ohneStrich(l.pre_info)].filter(Boolean).join(' ') || null,
+      pre_info: [k || l.verified_online ? '' : 'Hinweis: Anzeige nicht geprüft, vor dem Bewerben öffnen.', ohneStrich(l.pre_info)].filter(Boolean).join(' ') || null,
     });
   }
-  leads.sort((a, b) => b.match_score - a.match_score);
-
-  return { leads: leads.slice(0, c.treffer), abgelehnt: daten.abgelehnt || [], hinweise, werkzeug: suche.werkzeug, nutzung: summe(suche, bewertung), model: c.modellScout };
+  return leads.sort((a, b) => b.match_score - a.match_score);
 }
 
 function stelleText(lead) {

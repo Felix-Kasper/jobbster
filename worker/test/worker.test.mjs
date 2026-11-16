@@ -121,6 +121,14 @@ function claude(req, res, body) {
 
   if (body.output_config) {
     const pflicht = body.output_config.format.schema.required;
+    if (pflicht.includes('begriffe')) return ok(JSON.stringify({ begriffe: ['Qualitätsmanagement', 'Quality'] }), { input_tokens: 900, output_tokens: 40 });
+    if (pflicht.includes('leads') && /^### 1 \|/m.test(body.messages[0].content)) {
+      // Trefferliste aus den Stellen-Quellen: Die KI bewertet nach Nummer und versucht, einen Link zu erfinden
+      return ok(JSON.stringify({
+        leads: [leadJson('', '', 'https://erfunden.example/x', { nr: 1, rolle: 33 }), leadJson('Steirerwerk GmbH', '', '', { nr: 2, rolle: 20 }), leadJson('Gibt es nicht', 'x', 'https://erfunden.example/y', { nr: 9 })],
+        abgelehnt: [],
+      }), { input_tokens: 9000, output_tokens: 1200 });
+    }
     if (pflicht.includes('leads')) {
       return ok(JSON.stringify({
         leads: [
@@ -173,7 +181,10 @@ const server = http.createServer((req, res) => {
 
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const base = `http://127.0.0.1:${server.address().port}`;
-const env = { SUPABASE_URL: base, SUPABASE_SERVICE_KEY: 'dienst-schluessel', ANTHROPIC_API_KEY: 'sk-ant-test', ANTHROPIC_BASE_URL: base, WORKER_WARTEN_MAX_S: '1' };
+// Die Abschnitte 1 bis 5 prüfen den Weg über die Websuche (Reserve), Abschnitt 8 den Weg über die Stellen-Quellen.
+const envQuellen = { SUPABASE_URL: base, SUPABASE_SERVICE_KEY: 'dienst-schluessel', ANTHROPIC_API_KEY: 'sk-ant-test', ANTHROPIC_BASE_URL: base, WORKER_WARTEN_MAX_S: '1' };
+const env = { ...envQuellen, SCOUT_QUELLEN: 'aus' };
+const keinNetz = async (url) => { throw new Error(`Test ohne Netz: ${url}`); };
 const still = console.log;
 const ausgabe = [];
 console.log = (...a) => ausgabe.push(a.join(' '));
@@ -182,7 +193,7 @@ const pruefe = (name, fn) => { fn(); bestanden++; still(`  ok  ${name}`); };
 
 try {
   // 1. Normaler Lauf
-  const code = await main(env, []);
+  const code = await main(env, [], { holen: keinNetz });
   const q = Object.fromEntries(DB.queue.map((x) => [x.id, x]));
   pruefe('Lauf endet mit Code 2, weil ein Auftrag fehlschlug', () => assert.equal(code, 2));
   pruefe('Scout, Entwurf und Vorbereitung sind fertig', () => assert.deepEqual([q.q1.status, q.q2.status, q.q3.status], ['fertig', 'fertig', 'fertig']));
@@ -236,38 +247,38 @@ try {
   // 2. Tageslimit
   DB = frisch();
   DB.runs.push({ cost_usd: 3.2, created_at: new Date().toISOString() });
-  const code2 = await main(env, []);
+  const code2 = await main(env, [], { holen: keinNetz });
   pruefe('Tageslimit erreicht: Code 3, nichts wird bearbeitet', () => { assert.equal(code2, 3); assert.equal(DB.queue.find((x) => x.id === 'q1').status, 'wartet'); });
 
   // 3. Not-Aus
   DB = frisch();
   DB.app_config[0].value = true;
-  const code3 = await main(env, []);
+  const code3 = await main(env, [], { holen: keinNetz });
   pruefe('Not-Aus: Code 0, nichts wird bearbeitet', () => { assert.equal(code3, 0); assert.equal(DB.queue.find((x) => x.id === 'q1').status, 'wartet'); });
 
   // 4. Zeitplan
   DB = frisch();
   DB.queue = [];
   DB.members.push({ user_id: B, status: 'aktiv' }); // Mitglied ohne Profil: wird übersprungen
-  await main(env, ['--plan']);
+  await main(env, ['--plan'], { holen: keinNetz });
   pruefe('Zeitplan reiht genau einen Scout-Lauf ein und arbeitet ihn ab', () => { assert.equal(DB.queue.length, 1); assert.equal(DB.queue[0].user_id, A); assert.equal(DB.queue[0].status, 'fertig'); });
   DB.queue = [1, 2, 3].map((i) => ({ id: `alt${i}`, user_id: A, kind: 'scout', status: 'fertig', created_at: frueher(60 * i) }));
-  await main(env, ['--plan']);
+  await main(env, ['--plan'], { holen: keinNetz });
   pruefe('Zeitplan sucht höchstens einmal in 12 Stunden', () => assert.equal(DB.queue.length, 3));
   DB.queue = [{ id: 'gestern', user_id: A, kind: 'scout', status: 'fertig', created_at: frueher(60 * 13) }];
-  await main(env, ['--plan']);
+  await main(env, ['--plan'], { holen: keinNetz });
   pruefe('Zeitplan sucht jeden Tag neu', () => assert.equal(DB.queue.filter((q) => q.kind === 'scout').length, 2));
 
   // 5. Laufzeit und Probe
   DB = frisch();
   DB.queue = [];
   DB.members[0].valid_until = frueher(60);
-  await main(env, ['--plan']);
+  await main(env, ['--plan'], { holen: keinNetz });
   pruefe('Zeitplan überspringt abgelaufene Zugänge', () => assert.equal(DB.queue.length, 0));
   DB.members[0].valid_until = new Date(Date.now() + 86_400_000).toISOString();
   DB.members[0].limits = { scout: { anzahl: 1, tage: 7 }, entwurf: { anzahl: 1, tage: 7 }, vorbereitung: { anzahl: 0, tage: 7 } };
-  await main(env, ['--plan']);
-  await main(env, ['--plan']);
+  await main(env, ['--plan'], { holen: keinNetz });
+  await main(env, ['--plan'], { holen: keinNetz });
   pruefe('Probe-Zugang bekommt genau einen Suchlauf in 7 Tagen', () => assert.equal(DB.queue.length, 1));
 
   // 6. Schlüssel nie in Fehlermeldungen
@@ -293,6 +304,38 @@ try {
     assert.equal(v.felder.wuensche, '');
   });
   await assert.rejects(() => traumjobFelder({ claude: attrappe, text: 'zu kurz' }));
+
+  // 8. Stellen-Quellen: echte Anzeigen aus der Schnittstelle, die KI bewertet nur
+  DB = frisch();
+  DB.queue = [DB.queue[0]];
+  const vorher = apiLog.length;
+  const abrufe = [];
+  const json = (o) => new Response(JSON.stringify(o), { status: 200, headers: { 'content-type': 'application/json' } });
+  const quelle = async (url, init = {}) => {
+    abrufe.push(url);
+    if (!url.startsWith('https://europa.eu/eures/api/')) throw new Error(`unerwarteter Abruf ${url}`);
+    if (url.endsWith('/jv-search/search')) {
+      const wort = JSON.parse(init.body).keywords[0].keyword;
+      const j = (id, title, name) => ({ id, title, creationDate: Date.now() - 2 * 86_400_000, employer: { name }, translations: { de: { description: 'Trainee im Qualitätsmanagement: Audits, Reklamationen und Prüfpläne im Werk. Start nach Absprache, Bewerbung über das Portal.' } } });
+      return json({ jvs: wort === 'Qualität' ? [j('g1', 'Trainee Qualitätsmanagement', 'Murwerk AG'), j('g2', 'Junior Qualitätstechnik', 'siehe Beschreibung'), j('g3', 'Leiter Qualität', 'Chef AG'), j('g4', 'Junior Qualität', 'Altfirma GmbH')] : [] });
+    }
+    return json({ preferredLanguage: 'de', jvProfiles: { de: { description: 'Trainee im Qualitätsmanagement: Audits, Reklamationen und Prüfpläne im Werk Graz. Start nach Absprache.', locations: [{ cityName: 'Graz' }], employer: { name: 'siehe Beschreibung' }, applicationInstructions: [], personContacts: [] } } });
+  };
+  await main(envQuellen, [], { holen: quelle });
+  const ausQuelle = DB.job_leads.filter((l) => String(l.url).startsWith('https://europa.eu/'));
+  const lauf = DB.runs.at(-1);
+  pruefe('Quellen: Treffer mit echtem Link, Ort und Datum aus der Schnittstelle', () => {
+    assert.deepEqual(ausQuelle.map((l) => [l.company, l.title, l.location, l.source]), [['Murwerk AG', 'Trainee Qualitätsmanagement', 'Graz', 'EURES (AMS)'], ['Steirerwerk GmbH', 'Junior Qualitätstechnik', 'Graz', 'EURES (AMS)']]);
+    assert.ok(ausQuelle.every((l) => /^https:\/\/europa\.eu\/eures\/portal\/jv-se\/jv-details\/g[12]\?lang=de$/.test(l.url) && l.posted_at && l.pre_info === null));
+    assert.ok(!DB.job_leads.some((l) => /erfunden|Gibt es nicht/.test(`${l.url} ${l.company}`)), 'erfundene Links und Treffer der KI kommen nicht durch');
+  });
+  pruefe('Quellen: Leitungsrolle und schon bekannte Firma gehen gar nicht erst in die Bewertung', () => assert.ok(!abrufe.some((u) => /\/jv\/id\/g[34]/.test(u))));
+  pruefe('Quellen: keine Websuche, Kosten unter 1 Cent', () => {
+    assert.ok(apiLog.slice(vorher).every((x) => x.tools.length === 0));
+    assert.equal(lauf.searches, 0);
+    assert.equal(lauf.result_count, 2);
+    assert.ok(lauf.cost_usd > 0 && lauf.cost_usd < 0.01, `Kosten ${lauf.cost_usd}`);
+  });
 
   still(`\n${bestanden} Prüfungen bestanden.`);
 } catch (e) {

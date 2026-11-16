@@ -8,7 +8,7 @@
  *   node worker/worker.mjs --plan   vorher für alle aktiven Nutzer den fälligen Scout-Lauf einreihen
  *
  * Umgebung: SUPABASE_URL, SUPABASE_SERVICE_KEY, ANTHROPIC_API_KEY
- * Optional: SCOUT_VARIANTE (filter|einfach), SCOUT_MODELL (zum Testen), WORKER_MAX_AUFTRAEGE (8), WORKER_MAX_MINUTEN (25)
+ * Optional: SCOUT_VARIANTE (filter|einfach), SCOUT_MODELL (zum Testen), SCOUT_QUELLEN=aus (nur Websuche), WORKER_MAX_AUFTRAEGE (8), WORKER_MAX_MINUTEN (25)
  *
  * Im Protokoll stehen nur Kennungen, Mengen und Kosten. Keine Namen, keine Lebensläufe.
  */
@@ -71,7 +71,12 @@ function signaleText(leads) {
   return z.join('\n');
 }
 
-export async function main(env = process.env, argv = process.argv.slice(2)) {
+/**
+ * @param {Record<string, string | undefined>} env
+ * @param {string[]} argv
+ * @param {{ holen?: typeof fetch }} [dienste] Abruf der Stellen-Quellen, in Tests eine Attrappe
+ */
+export async function main(env = process.env, argv = process.argv.slice(2), { holen = globalThis.fetch } = {}) {
   env = { ...env, ANTHROPIC_API_KEY: String(env.ANTHROPIC_API_KEY ?? '').trim() };
   const fehlt = ['SUPABASE_URL', 'SUPABASE_SERVICE_KEY', 'ANTHROPIC_API_KEY'].filter((k) => !env[k]);
   if (fehlt.length) {
@@ -91,6 +96,7 @@ export async function main(env = process.env, argv = process.argv.slice(2)) {
   const cfg = {
     ...(env.SCOUT_VARIANTE ? { variante: env.SCOUT_VARIANTE } : {}),
     ...(/^claude-[a-z0-9-]+$/.test(env.SCOUT_MODELL || '') ? { modellScout: env.SCOUT_MODELL } : {}),
+    ...(env.SCOUT_QUELLEN === 'aus' ? { quellen: false } : {}),
   };
   const maxAuftraege = Number(env.WORKER_MAX_AUFTRAEGE || 8);
   const ende = Date.now() + Number(env.WORKER_MAX_MINUTEN || 25) * 60_000;
@@ -166,7 +172,7 @@ export async function main(env = process.env, argv = process.argv.slice(2)) {
 
       if (auftrag.kind === 'scout') {
         const alle = await db('GET', `job_leads?user_id=eq.${uid}&select=company,title,status,archive_reason&order=created_at.desc&limit=300`);
-        const r = await scout({ claude, profil, bekannt: [...new Set(alle.map((l) => l.company))], signale: signaleText(alle), cfg });
+        const r = await scout({ claude, profil, bekannt: [...new Set(alle.map((l) => l.company))], signale: signaleText(alle), cfg, holen });
         nutzung = r.nutzung;
         model = r.model;
         if (r.leads.length) {
