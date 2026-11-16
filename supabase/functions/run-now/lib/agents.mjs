@@ -84,7 +84,11 @@ async function scoutAusQuellen({ claude, profil, profilT, bekannt, signale, c, h
   const roh = await Q.sammle({ holen, begriffe, orte, mitPraktikum: !arten || /trainee|praktik|graduate/.test(arten) });
   hinweise.push(...roh.hinweise);
   const erfahren = /senior|leitung|führung|fuehrung|erfahren/i.test(`${w.level ?? ''}`);
-  const auswahl = Q.vorauswahl(roh.kandidaten, { begriffe, bekannt, ausschluesse: w.ausschluesse, erfahren, max: clamp(c.treffer * 2 + 4, 12, 28) });
+  const wunsch = `${arten} ${String(w.zielrollen ?? '')} ${String(w.level ?? '')}`.toLowerCase();
+  const auswahl = Q.vorauswahl(roh.kandidaten, {
+    begriffe, bekannt, ausschluesse: w.ausschluesse, erfahren, max: clamp(c.treffer * 2 + 4, 12, 28),
+    praktikum: !arten || /praktik|intern/.test(wunsch), werkstudent: /werkstudent|working student/.test(wunsch),
+  });
   const { kandidaten, fehlgeschlagen } = await Q.anreichern(holen, auswahl);
   if (fehlgeschlagen) hinweise.push(`Quelle: ${fehlgeschlagen} Anzeigen ohne Details`);
   hinweise.push(`Quellen: ${roh.anfragen} Anfragen (${begriffe.join(' · ')} in ${orte.map((o) => o.name).join(', ')}), ${roh.kandidaten.length} Anzeigen, ${kandidaten.length} in der Bewertung`);

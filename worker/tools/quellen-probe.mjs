@@ -31,9 +31,4 @@ if (eures) {
   const d = await fetch(`https://europa.eu/eures/api/jv-searchengine/public/jv/id/${encodeURIComponent(eures.id)}?lang=de`, { headers: { Accept: 'application/json' } }).then((r) => r.json()).catch((e) => ({ fehler: e.message }));
   console.log('\nEURES roh:', JSON.stringify(d, (k, v) => (k === 'description' && typeof v === 'string' ? `${v.slice(0, 80)} …` : v)).slice(0, 2500));
 }
-// Wirken die Filter der Arbeitsagentur gegen Zeitarbeit und private Vermittler?
-for (const filter of ['', '&zeitarbeit=false', '&pav=false', '&zeitarbeit=false&pav=false']) {
-  const r = await fetch(`https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v6/jobs?was=Controller&wo=M%C3%BCnchen&umkreis=30&angebotsart=1&veroeffentlichtseit=28&size=40${filter}`, { headers: { 'X-API-Key': 'jobboerse-jobsuche', Accept: 'application/json' } }).then((x) => x.json()).catch(() => null);
-  console.log(`BA Filter „${filter}“: ${r?.maxErgebnisse} Treffer, Vermittler unter den ersten 40: ${(r?.ergebnisliste ?? []).filter((s) => /personal|page|hays|trenkwalder|randstad|bankpower|consult|recruit|human|yer\b/i.test(s.firma)).length}`);
-}
 if (!roh.beantwortet) process.exitCode = 1;

@@ -11,6 +11,7 @@ const antwort = (json, status = 200) => new Response(JSON.stringify(json), { sta
 
 // --- Attrappen der Schnittstellen ---------------------------------------------------------------------------------
 const baEintrag = (ref, titel, firma, ort = 'München', tage = 3) => ({
+  verguetungsangabe: 'JAHRESGEHALT', gehaltsspanneVon: 42000, gehaltsspanneBis: 48000, eintrittszeitraum: { von: '2027-03-01' },
   referenznummer: ref, stellenangebotsTitel: titel, firma: `${firma}   `, datumErsteVeroeffentlichung: vorTagen(tage),
   stellenlokationen: [{ adresse: { ort, region: 'BAYERN', land: 'DEUTSCHLAND' } }],
 });
@@ -41,7 +42,7 @@ function attrappe({ ba = {}, eures = {}, baFehler = null, kaputt = () => false }
     if (u.hostname === 'europa.eu' && u.pathname.endsWith('/jv-search/search')) return antwort({ numberRecords: 1, jvs: eures[body.keywords[0].keyword] ?? [] });
     if (u.hostname === 'europa.eu' && u.pathname.includes('/jv/id/')) {
       const id = decodeURIComponent(u.pathname.split('/').pop());
-      return antwort({ id, preferredLanguage: 'de', jvProfiles: { de: { description: `Volltext zu ${id}: Reporting, Forecast, Abweichungsanalysen und Kostenrechnung im Werk Innsbruck der Beispielwerk GmbH.`, locations: [{ cityName: 'Innsbruck' }], employer: { name: 'siehe Beschreibung' }, applicationInstructions: ['Bewerbung <b>per E-Mail</b>'], personContacts: [{ communications: { emails: [{ uri: 'mailto:personal@beispielwerk.at' }] } }] } } });
+      return antwort({ id, preferredLanguage: 'de', jvProfiles: { de: { description: `Volltext zu ${id}: Reporting, Forecast, Abweichungsanalysen und Kostenrechnung im Werk Innsbruck der Beispielwerk GmbH.`, locations: [{ cityName: 'Innsbruck' }], employer: { name: 'siehe Beschreibung' }, applicationInstructions: ['Bewerbung <b>per E-Mail</b>'], employmentPeriod: { startDate: Date.parse('2026-12-01') }, offeredRemunerationPackage: { salaries: [{ minimumSalary: 45738, currencyCode: 'EUR' }] }, personContacts: [{ communications: { emails: [{ uri: 'mailto:personal@beispielwerk.at' }] } }] } } });
     }
     return antwort({}, 404);
   };
@@ -88,9 +89,10 @@ test('Suchbegriffe mischen: eigene zuerst, keine Doppelten, höchstens sechs, h�
 test('Orte: Österreich geht an EURES, der Rest an die Arbeitsagentur, Reihenfolge bleibt', () => {
   const plan = Q.ortPlan(['Innsbruck', 'München', 'Remote', 'Wien', 'Hall in Tirol', 'Linz']);
   assert.deepEqual(plan.map((o) => [o.name, o.rang, o.quelle]), [['Innsbruck', 0, 'eures'], ['München', 1, 'ba'], ['Wien', 3, 'eures'], ['Hall in Tirol', 4, 'eures']]);
-  assert.deepEqual(plan[0].nuts, ['at33']);
-  assert.deepEqual(plan[2].nuts, ['at13', 'at12'], 'Wien mit Umland');
-  assert.deepEqual(Q.ortPlan('Graz; Österreich'), [{ name: 'Graz', rang: 0, quelle: 'eures', nuts: ['at22'] }, { name: 'Österreich', rang: 1, quelle: 'eures', nuts: ['at'] }]);
+  assert.deepEqual([plan[0].nuts, plan[0].nah], [['at33'], ['at332']], 'Suche in ganz Tirol, nah ist die Region Innsbruck');
+  assert.deepEqual([plan[2].nuts, plan[2].nah], [['at13', 'at12'], ['at130', 'at126', 'at127']], 'Wien mit Umland');
+  assert.deepEqual(Q.ortPlan('Graz; Österreich; Tirol'), [{ name: 'Graz', rang: 0, quelle: 'eures', nuts: ['at22'], nah: ['at221'] }, { name: 'Österreich', rang: 1, quelle: 'eures', nuts: ['at'], nah: [] }, { name: 'Tirol', rang: 2, quelle: 'eures', nuts: ['at33'], nah: [] }]);
+  assert.equal(Q.regionName('AT331'), 'Außerfern (Reutte)');
   assert.deepEqual(Q.ortPlan(undefined), []);
 });
 
@@ -103,8 +105,9 @@ test('Klartext: HTML, Entitäten und Markdown raus', () => {
 test('Arbeitsagentur: Felder sauber, Kennung in der Kopfzeile, Angebotsart wird gesendet', async () => {
   const { holen, anfragen } = attrappe({ ba: { 'Controller|34': [baEintrag('10001-1-S', 'Trainee Controlling (m/w/d)', 'Beispiel AG', 'Garching', 5)] } });
   const [k] = await Q.baSuche(holen, { was: 'Controller', wo: 'München', rang: 1, angebotsart: 34 });
-  assert.deepEqual(k, { quelle: 'Arbeitsagentur', id: '10001-1-S', titel: 'Trainee Controlling (m/w/d)', firma: 'Beispiel AG', ort: 'Garching', land: 'DE', datum: vorTagen(5), url: 'https://www.arbeitsagentur.de/jobsuche/jobdetail/10001-1-S', beschreibung: '', mail: null, bewerbung: '', ortRang: 1 });
+  assert.deepEqual(k, { quelle: 'Arbeitsagentur', id: '10001-1-S', titel: 'Trainee Controlling (m/w/d)', firma: 'Beispiel AG', ort: 'Garching', land: 'DE', datum: vorTagen(5), url: 'https://www.arbeitsagentur.de/jobsuche/jobdetail/10001-1-S', beschreibung: '', mail: null, bewerbung: '', ortRang: 1, nah: true, gehalt: '42000 bis 48000 EUR pro Jahr', start: '2027-03-01' });
   const u = new URL(anfragen[0].url);
+  assert.deepEqual([u.searchParams.get('zeitarbeit'), u.searchParams.get('pav')], ['false', 'false'], 'ohne Zeitarbeit und private Vermittler');
   assert.equal(anfragen[0].kopf['X-API-Key'], 'jobboerse-jobsuche');
   assert.equal(u.searchParams.get('umkreis'), '30');
   assert.equal(u.searchParams.get('veroeffentlichtseit'), '28');
@@ -127,6 +130,10 @@ test('EURES: Suche im Titel und im Bundesland, anonyme Firma bleibt leer', async
   assert.equal(anonym.datum, vorTagen(2));
   assert.match(anonym.beschreibung, /^Aufgaben im Controlling/);
   assert.equal(offen.firma, 'Tirolwerk GmbH');
+  assert.equal(anonym.ort, 'Region Innsbruck');
+  assert.equal(anonym.nah, true);
+  const [fern] = await Q.euresSuche(holen, { was: 'Controller', nuts: ['at33'], nah: ['at331'], rang: 0 });
+  assert.equal(fern.nah, false, 'gleiches Bundesland, aber nicht die Region des Wunschorts');
 });
 
 // --- Sammeln ------------------------------------------------------------------------------------------------------
@@ -173,6 +180,9 @@ test('Vorauswahl: Einstieg vor Leitung, bekannte Firmen raus, jede Firma einmal,
   const erfahren = Q.vorauswahl(liste, { begriffe: ['Controller', 'Controlling'], erfahren: true, max: 10, jetzt: JETZT });
   assert.ok(erfahren.some((x) => x.id === '1') && erfahren.some((x) => x.id === '9'), 'wer Leitung sucht, bekommt Leitung');
   assert.equal(Q.vorauswahl(liste, { begriffe: ['Controller'], max: 1, jetzt: JETZT }).length, 1);
+  const mehr = [k('a', 'Praktikum Controlling', 'P AG'), k('b', 'Werkstudent Controlling', 'W AG'), k('c', 'Controller', 'Fern AG', { nah: false }), k('d', 'Controller', 'Nah AG', { datum: vorTagen(9) }), k('e', 'Controller', 'Frisch AG', { datum: vorTagen(6) })];
+  assert.deepEqual(Q.vorauswahl(mehr, { begriffe: ['Controlling', 'Controller'], max: 10, jetzt: JETZT }).map((x) => x.id), ['a', 'e', 'd', 'c'], 'Praktikum ja, Werkstudent nein, nah vor fern, frisch vor alt');
+  assert.deepEqual(Q.vorauswahl(mehr, { begriffe: ['Controlling'], praktikum: false, werkstudent: true, max: 10, jetzt: JETZT }).map((x) => x.id), ['b', 'e', 'd', 'c'], 'Werkstudent nur auf Wunsch, Praktikum abwählbar');
 });
 
 // --- Anreichern und Trefferliste ----------------------------------------------------------------------------------
@@ -194,11 +204,14 @@ test('Anreichern: Volltext, Ort und Kontakt kommen aus den Details, Anzeigen ohn
   assert.equal(eures.mail, 'personal@beispielwerk.at');
   assert.equal(eures.firma, null, '„siehe Beschreibung“ ist kein Firmenname');
   assert.equal(eures.bewerbung, 'Bewerbung per E-Mail');
+  assert.equal(eures.gehalt, 'mindestens 45738 EUR laut Anzeige');
+  assert.equal(eures.start, '2026-12-01');
+  assert.equal(ba.bewerbung.includes('arbeitsagentur.de'), false);
 });
 
 test('Trefferliste: nummeriert, mit Link und gekürztem Anzeigentext', () => {
-  const text = Q.trefferliste([{ quelle: 'EURES (AMS)', id: 'e1', titel: 'Controller/in', firma: null, ort: 'Innsbruck', land: 'AT', datum: '2026-11-14', url: 'https://europa.eu/x', beschreibung: 'x'.repeat(2000), mail: 'a@b.at', bewerbung: '', ortRang: 0 }]);
-  assert.match(text, /^### 1 \| Firma steht im Text \| Controller\/in\nOrt: Innsbruck \(AT\)\nLink: https:\/\/europa\.eu\/x\nQuelle: EURES \(AMS\)\nVeröffentlicht: 2026-11-14\nBewerbungsweg: E-Mail \(a@b\.at\)\nOnline geprüft: ja\nAnzeigentext: x+ …$/);
+  const text = Q.trefferliste([{ quelle: 'EURES (AMS)', id: 'e1', titel: 'Controller/in', firma: null, ort: 'Innsbruck', land: 'AT', datum: '2026-11-14', url: 'https://europa.eu/x', beschreibung: 'x'.repeat(2000), mail: 'a@b.at', bewerbung: '', ortRang: 0, gehalt: 'mindestens 45738 EUR laut Anzeige', start: '2026-12-01' }]);
+  assert.match(text, /^### 1 \| Firma steht im Text \| Controller\/in\nOrt: Innsbruck \(AT\)\nLink: https:\/\/europa\.eu\/x\nQuelle: EURES \(AMS\)\nVeröffentlicht: 2026-11-14\nBewerbungsweg: E-Mail \(a@b\.at\)\nOnline geprüft: ja\nGehalt: mindestens 45738 EUR laut Anzeige\nStart laut Anzeige: 2026-12-01\nAnzeigentext: x+ …$/);
   assert.ok(text.length < Q.GRENZEN.beschreibung + 300);
 });
 
