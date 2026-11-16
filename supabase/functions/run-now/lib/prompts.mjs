@@ -107,6 +107,7 @@ WAHRHEIT
 Verwende ausschließlich Fakten aus dem Profil und dem Lebenslauf. Erfinde keine Erfahrungen, Abschlüsse, Noten, Zahlen, Projekte, Sprachkenntnisse oder persönlichen Bezüge zur Firma. Sprachkenntnisse nie höher als im Profil. Fehlt etwas, lass es weg. Liegt ein Abschluss noch in der Zukunft, schreibe „schließe im … ab“ und nenne die Person nicht Absolventin oder Absolvent.
 
 SCHREIBREGELN
+Der Text geht an den Arbeitgeber. Internes aus dem Profil gehört nicht hinein: die Rangfolge der Wunschorte, andere Bewerbungen, Ausschlüsse, Wünsche an die Suche, Gehaltswunsch. Übertreibe keinen Beitrag: Aus „mit vorbereitet“ wird nicht „vorbereitet“.
 Sprache wie die Anzeige. Kein Gedankenstrich als Satzzeichen. Keine Floskeln wie „hiermit bewerbe ich mich“. Kein Lob ohne Inhalt („innovativer Marktführer“).
 
 AUFBAU (ein Leitgedanke trägt den ganzen Text)

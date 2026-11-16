@@ -19,7 +19,9 @@ export const STANDARD = {
   abrufe: 6,
   quellen: true, // echte Anzeigen aus Arbeitsagentur und EURES
   websucheWennLeer: true, // Websuche nur, wenn keine Quelle die Orte abdeckt
-  textDenken: true, // Nachdenken vor dem Anschreiben
+  // Gemessen am 16.11.2026: Nachdenken vor dem Anschreiben kostete 3,4 Cent je Entwurf (zwei Drittel der Ausgabe) ohne sichtbar besseren Text.
+  // Haiku als Schreiber kostet nur 0,1 Cent, schreibt aber unzuverlässiger (verriet zum Beispiel die Rangfolge der Wunschorte).
+  textDenken: false,
   textAufwand: null, // null = Standard des Modells
   mindestMatch: 50, // Treffer darunter werden nicht gezeigt: lieber 7 gute als 10 mit Lückenfüllern
 };
