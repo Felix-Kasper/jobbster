@@ -23,7 +23,7 @@ jobs:
         run: |
           node worker/test/worker.test.mjs
           node worker/test/stripe.test.mjs
-          node --test worker/test/quellen.test.mjs
+          node --test worker/test/quellen.test.mjs worker/test/claude.test.mjs
       - name: App installieren
         working-directory: app
         run: npm ci

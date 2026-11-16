@@ -91,26 +91,44 @@ export function createClaude({ post, log = () => {}, wartenMaxS = 90 }) {
     throw letzter ?? new ApiFehler(0, 'unbekannter Fehler');
   }
 
-  /** Eine Anfrage samt Fortsetzungen nach pause_turn. Gibt Text und Verbrauch zurück. */
-  async function zug({ model, system, user, tools, format, maxTokens = 16000 }) {
+  /**
+   * Eine Anfrage samt Fortsetzungen nach pause_turn. Gibt Text und Verbrauch zurück.
+   * denken: false schaltet das Nachdenken vor der Antwort ab. Es zählt als Ausgabe (teuer, langsam, frisst max_tokens)
+   * und bringt bei Aufgaben mit festem Schema wenig. aufwand: 'low' | 'medium' | 'high' steuert die Gründlichkeit.
+   * Lehnt die API eine der beiden Angaben ab (400), läuft die Anfrage ohne sie.
+   */
+  async function zug({ model, system, user, tools, format, maxTokens = 16000, denken = true, aufwand = null }) {
     const messages = [{ role: 'user', content: user }];
     const t0 = Date.now();
     const texte = [];
     const werkzeugFehler = [];
     let pausiert = [];
     let stop = null;
-    const n = { anfragen: 0, tokensEin: 0, tokensAus: 0, suchen: 0, abrufe: 0, usd: 0 };
+    const n = { anfragen: 0, tokensEin: 0, tokensAus: 0, tokensDenken: 0, suchen: 0, abrufe: 0, usd: 0 };
+    let steuerung = !denken || Boolean(aufwand);
     const suchbegriffe = [];
 
     for (let runde = 0; runde < 10; runde++) {
       const body = { model, max_tokens: maxTokens, system, messages: pausiert.length ? [...messages, { role: 'assistant', content: pausiert }] : messages };
       if (tools?.length) body.tools = tools;
       if (format) body.output_config = { format: { type: 'json_schema', schema: format } };
-      const res = await api(body);
+      if (steuerung && !denken) body.thinking = { type: 'disabled' };
+      if (steuerung && aufwand) body.output_config = { ...body.output_config, effort: aufwand };
+      let res;
+      try {
+        res = await api(body);
+      } catch (e) {
+        if (!(steuerung && e.status === 400 && /thinking|effort/i.test(e.message))) throw e;
+        log(`Steuerung abgelehnt, weiter ohne: ${String(e.message).slice(0, 100)}`);
+        steuerung = false;
+        runde--;
+        continue;
+      }
       const u = res.usage || {};
       n.anfragen += 1;
       n.tokensEin += (u.input_tokens || 0) + (u.cache_creation_input_tokens || 0) + (u.cache_read_input_tokens || 0);
       n.tokensAus += u.output_tokens || 0;
+      n.tokensDenken += u.output_tokens_details?.thinking_tokens || 0;
       n.suchen += u.server_tool_use?.web_search_requests || 0;
       n.abrufe += u.server_tool_use?.web_fetch_requests || 0;
       n.usd += kosten(model, u);
@@ -159,7 +177,7 @@ export function leseJson(text) {
 
 /** Verbrauch mehrerer Züge zusammenzählen. */
 export function summe(...zuege) {
-  const s = { anfragen: 0, tokensEin: 0, tokensAus: 0, suchen: 0, abrufe: 0, usd: 0, ms: 0 };
+  const s = { anfragen: 0, tokensEin: 0, tokensAus: 0, tokensDenken: 0, suchen: 0, abrufe: 0, usd: 0, ms: 0 };
   for (const z of zuege) if (z) for (const k of Object.keys(s)) s[k] += z[k] || 0;
   return s;
 }

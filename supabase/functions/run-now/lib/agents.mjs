@@ -56,7 +56,7 @@ async function suchbegriffe({ claude, profil, profilT, c, hinweise }) {
   const eigene = Q.begriffeAusRollen(profil.preferences?.zielrollen);
   let plan = null;
   try {
-    plan = await claude.zug({ model: c.modellScout, system: P.scoutSuchplan(), user: `PROFIL\n${profilT.slice(0, 6000)}`, format: P.SUCHPLAN_SCHEMA, maxTokens: 400 });
+    plan = await claude.zug({ model: c.modellScout, system: P.scoutSuchplan(), user: `PROFIL\n${profilT.slice(0, 6000)}`, format: P.SUCHPLAN_SCHEMA, maxTokens: 400, denken: false, aufwand: 'low' });
   } catch (e) {
     hinweise.push(`Suchplan ohne KI (${String(e.message).slice(0, 80)})`);
   }
@@ -106,10 +106,12 @@ async function scoutAusQuellen({ claude, profil, profilT, bekannt, signale, c, h
     ].filter(Boolean).join('\n\n'),
     format: P.LEADS_SCHEMA,
     maxTokens: 20000,
+    denken: false, // die Begründung steht ohnehin in why_fit; Nachdenken davor kostete das Vierfache der Antwort
   });
   const daten = leseJson(bewertung.text) ?? retteLeads(bewertung.text);
   if (!daten) hinweise.push(`Bewertung lieferte kein lesbares JSON (${bewertung.stop})`);
   else if (bewertung.stop === 'max_tokens') hinweise.push('Bewertung abgeschnitten, vollständige Treffer gerettet');
+  hinweise.push(`Bewertung: ${daten?.leads?.length ?? 0} Treffer, ${daten?.abgelehnt?.length ?? 0} abgelehnt, ${bewertung.tokensAus} Tokens Ausgabe (${bewertung.tokensDenken || 0} davon Nachdenken), ${Math.round(bewertung.ms / 1000)} s`);
   const leads = leadsAusBewertung(daten?.leads, { bekannt, kandidaten });
   return { abgedeckt: true, ergebnis: { leads: leads.slice(0, c.treffer), abgelehnt: daten?.abgelehnt || [], hinweise, werkzeug: 'quellen', nutzung: summe(plan, bewertung), model: c.modellScout } };
 }
