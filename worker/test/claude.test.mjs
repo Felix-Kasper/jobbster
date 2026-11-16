@@ -47,3 +47,16 @@ test('Andere 400-Fehler werden nicht verschluckt', async () => {
   const claude = createClaude({ post: async () => ({ status: 400, json: { error: { message: 'max_tokens: too large' } } }) });
   await assert.rejects(() => claude.zug({ model: HAIKU, system: 's', user: 'u', denken: false }), /max_tokens/);
 });
+
+test('Modell verlangt „between_tools“ statt „disabled“: wird übernommen und für das Modell gemerkt', async () => {
+  const gesendet = [];
+  const post = async (body) => {
+    gesendet.push(body.thinking?.type);
+    return body.thinking?.type === 'disabled' ? { status: 400, json: { error: { message: 'To turn thinking off on this model, send "thinking": {"type": "between_tools"} instead of {"type": "disabled"}' } } } : ok();
+  };
+  const claude = createClaude({ post });
+  await claude.zug({ model: 'claude-sonnet-5-5', system: 's', user: 'u', denken: false });
+  await claude.zug({ model: 'claude-sonnet-5-5', system: 's', user: 'u', denken: false });
+  await claude.zug({ model: HAIKU, system: 's', user: 'u', denken: false });
+  assert.deepEqual(gesendet, ['disabled', 'between_tools', 'between_tools', 'disabled', 'between_tools']);
+});

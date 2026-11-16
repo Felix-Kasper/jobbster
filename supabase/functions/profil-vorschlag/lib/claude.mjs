@@ -61,6 +61,8 @@ export function werkzeuge(variante, { suchen, abrufe = 0, land, zeitzone }) {
 export function createClaude({ post, log = () => {}, wartenMaxS = 90 }) {
   let version = '2023-06-01';
   let gesamtUsd = 0; // alles, was dieser Client je ausgegeben hat (auch bei später fehlgeschlagenen Aufträgen)
+  /** @type {Map<string, string>} gemerkt je Modell, damit die Rückfrage nur einmal anfällt */
+  const ohneDenken = new Map();
 
   async function api(body) {
     let letzter = null;
@@ -95,7 +97,7 @@ export function createClaude({ post, log = () => {}, wartenMaxS = 90 }) {
    * Eine Anfrage samt Fortsetzungen nach pause_turn. Gibt Text und Verbrauch zurück.
    * denken: false schaltet das Nachdenken vor der Antwort ab. Es zählt als Ausgabe (teuer, langsam, frisst max_tokens)
    * und bringt bei Aufgaben mit festem Schema wenig. aufwand: 'low' | 'medium' | 'high' steuert die Gründlichkeit.
-   * Lehnt die API eine der beiden Angaben ab (400), läuft die Anfrage ohne sie.
+   * Lehnt die API eine der beiden Angaben ab (400), läuft die Anfrage mit dem von ihr genannten Wert oder ohne sie.
    */
   async function zug({ model, system, user, tools, format, maxTokens = 16000, denken = true, aufwand = null }) {
     const messages = [{ role: 'user', content: user }];
@@ -106,21 +108,29 @@ export function createClaude({ post, log = () => {}, wartenMaxS = 90 }) {
     let stop = null;
     const n = { anfragen: 0, tokensEin: 0, tokensAus: 0, tokensDenken: 0, suchen: 0, abrufe: 0, usd: 0 };
     let steuerung = !denken || Boolean(aufwand);
+    let denkArt = ohneDenken.get(model) ?? 'disabled'; // je Modell heißt „ohne Nachdenken“ anders
     const suchbegriffe = [];
 
     for (let runde = 0; runde < 10; runde++) {
       const body = { model, max_tokens: maxTokens, system, messages: pausiert.length ? [...messages, { role: 'assistant', content: pausiert }] : messages };
       if (tools?.length) body.tools = tools;
       if (format) body.output_config = { format: { type: 'json_schema', schema: format } };
-      if (steuerung && !denken) body.thinking = { type: 'disabled' };
+      if (steuerung && !denken) body.thinking = { type: denkArt };
       if (steuerung && aufwand) body.output_config = { ...body.output_config, effort: aufwand };
       let res;
       try {
         res = await api(body);
       } catch (e) {
         if (!(steuerung && e.status === 400 && /thinking|effort/i.test(e.message))) throw e;
-        log(`Steuerung abgelehnt, weiter ohne: ${String(e.message).slice(0, 100)}`);
-        steuerung = false;
+        // Manche Modelle nennen den Wert selbst, mit dem das Nachdenken vor der Antwort entfällt
+        const andere = !denken && denkArt === 'disabled' && /between_tools/.test(e.message) ? 'between_tools' : null;
+        if (andere) {
+          denkArt = andere;
+          ohneDenken.set(model, andere);
+        } else {
+          log(`Steuerung abgelehnt, weiter ohne: ${String(e.message).slice(0, 100)}`);
+          steuerung = false;
+        }
         runde--;
         continue;
       }
