@@ -138,7 +138,8 @@ function Start() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    // Die App liegt unter /app/ (Landingpage auf /). BASE_URL setzt der Build über VITE_BASE.
+    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || undefined}>
       <Provider>
         <Routes>
           <Route path="/" element={<Start />} />

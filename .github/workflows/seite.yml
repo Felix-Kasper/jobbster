@@ -1,0 +1,58 @@
+name: Seite veröffentlichen
+
+# Baut Landingpage (/) und App (/app/) und legt beides auf den Zweig gh-pages (GitHub Pages).
+# Mit eigener Domain: Repo-Variable SEITE_DOMAIN setzen (zum Beispiel jobbster.app), dann liegt alles unter der Wurzel.
+on:
+  push:
+    branches: [main]
+    paths: ['app/**', 'landing/**', '.github/workflows/seite.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: seite
+  cancel-in-progress: true
+
+jobs:
+  bauen:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      DOMAIN: ${{ vars.SEITE_DOMAIN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - name: Pfad bestimmen
+        run: |
+          if [ -n "$DOMAIN" ]; then echo "BASIS=/" >> "$GITHUB_ENV"; else echo "BASIS=/${GITHUB_REPOSITORY#*/}/" >> "$GITHUB_ENV"; fi
+      - name: App bauen
+        working-directory: app
+        run: |
+          npm ci
+          VITE_BASE="${BASIS}app/" npm run build
+      - name: Landingpage bauen und zusammenlegen
+        run: |
+          python3 landing/build.py
+          mkdir -p _seite/app
+          cp landing/index.html _seite/index.html
+          cp -r app/dist/. _seite/app/
+          # GitHub Pages kennt kein Umschreiben: Unbekannte Pfade (zum Beispiel /app/treffer) liefern 404.html, und das ist die App
+          cp app/dist/index.html _seite/404.html
+          cp app/public/favicon.svg _seite/favicon.svg 2>/dev/null || true
+          touch _seite/.nojekyll
+          if [ -n "$DOMAIN" ]; then echo "$DOMAIN" > _seite/CNAME; fi
+      - name: Auf gh-pages legen
+        run: |
+          cd _seite
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -qm "Seite aus ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
