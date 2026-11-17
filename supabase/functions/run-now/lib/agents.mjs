@@ -136,8 +136,9 @@ async function scoutAusQuellen({ claude, profil, profilT, bekannt, signale, c, h
       `PROFIL\n${profilT}`,
       signale ? `SIGNALE (was die Person bisher beworben oder aussortiert hat)\n${signale}` : '',
       `TREFFERLISTE\n${Q.trefferliste(kandidaten)}`,
-      // Die Ausgabe ist der teure und langsame Teil: nur die besten ausführlich, der Rest in einem Halbsatz
-      `Die Liste hat ${kandidaten.length} Treffer. Gib ${Math.min(kandidaten.length, c.treffer + 2)} davon in leads aus, nach der Reihenfolge der Vorliebe, und fülle mit ähnlichen und anspruchsvolleren auf. Weniger nur, wenn die Liste nach den Regeln nicht mehr hergibt. Was gar nicht geht, kommt mit Grund in höchstens 8 Wörtern in abgelehnt. Den Rest lässt du weg.`,
+      // Die Ausgabe ist der teure und langsame Teil: nur so viele ausführlich, wie gebraucht werden.
+      // 4 mehr als nötig, weil doppelte Firmen (Name nur im Anzeigentext) danach noch wegfallen.
+      `Die Liste hat ${kandidaten.length} Treffer. Gib ${Math.min(kandidaten.length, c.treffer + 4)} davon in leads aus, nach der Reihenfolge der Vorliebe, und fülle mit ähnlichen und anspruchsvolleren auf. Weniger nur, wenn die Liste nach den Regeln nicht mehr hergibt. Was gar nicht geht, kommt mit Grund in höchstens 8 Wörtern in abgelehnt. Den Rest lässt du weg.`,
     ].filter(Boolean).join('\n\n'),
     format: P.LEADS_SCHEMA,
     maxTokens: 20000,
@@ -164,7 +165,7 @@ async function scoutAusWebsuche({ claude, profil, profilT, bekannt, signale, c }
   ].filter(Boolean).join('\n\n');
 
   const suche = await claude.zugMitWerkzeugen(
-    { model: c.modellScout, system: P.scoutSuche({ heute: c.heute, treffer: c.treffer, suchen: c.suchen, abrufe: c.abrufe }), user, ...(c.webAufwand ? { aufwand: c.webAufwand, maxTokens: 8000 } : {}) },
+    { model: c.modellScout, system: P.scoutSuche({ heute: c.heute, treffer: c.treffer, suchen: c.suchen, abrufe: c.abrufe }), user, ...(c.webAufwand ? { aufwand: c.webAufwand, maxTokens: 14000 } : {}) },
     werkzeuge(c.variante, { suchen: c.suchen, abrufe: c.abrufe, ...ortFuerSuche(profil) }),
   );
   if (suche.stop !== 'end_turn') hinweise.push(`Suche endete mit ${suche.stop}`);

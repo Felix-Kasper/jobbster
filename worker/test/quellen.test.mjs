@@ -290,7 +290,7 @@ test('Scout: Treffer aus den Quellen, ohne Websuche, für Bruchteile eines Cents
   assert.equal(ki.zuege.length, 2, 'ein Suchplan, eine Bewertung');
   assert.ok(r.nutzung.usd < 0.01);
   assert.ok(ki.zuege[1].user.includes('### 1 | Tirolwerk GmbH | Junior Controller'));
-  assert.match(ki.zuege[1].user, /Gib 4 davon in leads aus/);
+  assert.match(ki.zuege[1].user, /Gib 4 davon in leads aus/, 'alle 4, weil 3 + 4 mehr als die Liste hat');
   assert.ok(!ki.zuege[1].user.includes('Schon Da GmbH'));
   assert.match(r.hinweise.join('\n'), /Quellen: \d+ Anfragen \(Controlling · Controller · Financial Analyst in Innsbruck, München\), 5 Anzeigen, 4 in der Bewertung/);
   assert.ok(anfragen.length <= Q.GRENZEN.anfragen + 28);
