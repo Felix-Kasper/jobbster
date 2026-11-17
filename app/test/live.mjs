@@ -66,6 +66,9 @@ const RAUCHTEST_CODE = 'ZS-FCA8-93EE-8FE5-206E';
   const seite = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
   const probleme = [];
   seite.on('pageerror', (e) => probleme.push(e.message));
+  seite.on('console', (m) => (m.type() === 'error' || m.type() === 'warning') && console.log(`    Browser ${m.type()}: ${m.text().slice(0, 300)}`));
+  seite.on('requestfailed', (r) => console.log(`    Abruf fehlgeschlagen: ${r.url().slice(0, 150)} (${r.failure()?.errorText})`));
+  seite.on('response', (r) => /pdf\.worker/.test(r.url()) && console.log(`    PDF-Worker: ${r.status()} ${r.headers()['content-type']} ${r.url().split('/').pop()}`));
   let angelegt = false;
   try {
     await pruefe('Registrieren mit Einladungscode führt zum Fragebogen', async () => {
@@ -79,6 +82,7 @@ const RAUCHTEST_CODE = 'ZS-FCA8-93EE-8FE5-206E';
       angelegt = true;
     });
     await pruefe('Fragebogen: Lebenslauf-PDF wird gelesen, alle Schritte gehen durch', async () => {
+      try {
       await seite.getByRole('button', { name: 'Weiter' }).click();
       await seite.locator('#cv-datei').setInputFiles(cv);
       await seite.getByText(/Gelesen: 1 Seite/).waitFor({ timeout: 20000 });
@@ -94,6 +98,11 @@ const RAUCHTEST_CODE = 'ZS-FCA8-93EE-8FE5-206E';
       await seite.getByRole('button', { name: 'Weiter' }).click();
       await seite.getByRole('button', { name: 'Weiter' }).click();
       await seite.getByRole('button', { name: 'Erste Suche starten' }).waitFor({ timeout: 10000 });
+      } catch (e) {
+        await seite.screenshot({ path: 'rauchtest-fragebogen.png', fullPage: true });
+        console.log(`    Sichtbar: ${(await seite.locator('main').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 600)}`);
+        throw e;
+      }
     });
     await pruefe('Abschluss führt in die App, die erste Suche ist angemeldet', async () => {
       await seite.getByRole('button', { name: 'Erste Suche starten' }).click();
