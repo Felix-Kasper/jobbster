@@ -72,8 +72,15 @@ jobs:
           for i in $(seq 1 18); do
             A=$(curl -s -o /dev/null -w "%{http_code}" "$ZIEL/"); B=$(curl -s -o /dev/null -w "%{http_code}" "$ZIEL/app/anmelden")
             echo "Versuch $i: Landing $A, App $B"
-            [ "$A" = 200 ] && [ "$B" != 000 ] && grep -q . <(curl -s "$ZIEL/" | grep -o "Jobbster" | head -1) && { echo "ONLINE: $ZIEL/"; exit 0; }
+            [ "$A" = 200 ] && [ "$B" != 000 ] && grep -q . <(curl -s "$ZIEL/" | grep -o "Jobbster" | head -1) && { echo "ONLINE: $ZIEL/"; echo "ZIEL=$ZIEL" >> "$GITHUB_ENV"; exit 0; }
             sleep 10
           done
           echo "NICHT ERREICHBAR: GitHub Pages ist vermutlich noch nicht eingeschaltet (Settings → Pages → Branch gh-pages)."
           exit 1
+      - name: Rauchtest im Browser (Laptop und Handy)
+        if: env.ZIEL != ''
+        working-directory: app
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+          node test/live.mjs "$ZIEL"
