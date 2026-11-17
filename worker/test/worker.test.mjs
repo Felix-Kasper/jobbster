@@ -114,12 +114,12 @@ const leadJson = (company, title, url, extra = {}) => ({
 function claude(req, res, body) {
   const tools = (body.tools || []).map((t) => t.type);
   const hatAssistant = body.messages.some((m) => m.role === 'assistant');
-  apiLog.push({ model: body.model, tools, maxUses: (body.tools || []).map((t) => t.max_uses ?? null), thinking: body.thinking?.type ?? null, format: Boolean(body.output_config), system: body.system.slice(0, 30), bisZu: /Ziel sind (\d+) gute Treffer/.exec(body.system)?.[1] });
+  apiLog.push({ model: body.model, tools, maxUses: (body.tools || []).map((t) => t.max_uses ?? null), thinking: body.thinking?.type ?? null, format: Boolean(body.output_config?.format), effort: body.output_config?.effort ?? null, system: body.system.slice(0, 30), bisZu: /Ziel sind (\d+) gute Treffer/.exec(body.system)?.[1] });
   if (!req.headers['x-api-key']) return send(res, 401, { error: { message: 'x-api-key fehlt' } });
   if (tools.includes('web_search_20260318')) return send(res, 400, { error: { message: 'web_search_20260318 requires allowed_callers' } });
   const ok = (text, usage) => send(res, 200, { role: 'assistant', stop_reason: 'end_turn', content: [{ type: 'text', text }], usage });
 
-  if (body.output_config) {
+  if (body.output_config?.format) {
     const pflicht = body.output_config.format.schema.required;
     if (pflicht.includes('begriffe')) return ok(JSON.stringify({ begriffe: ['Qualitätsmanagement', 'Quality'] }), { input_tokens: 900, output_tokens: 40 });
     if (pflicht.includes('leads') && /^### 1 \|/m.test(body.messages[0].content)) {
@@ -341,6 +341,7 @@ try {
     assert.ok(web.length >= 1);
     assert.ok(web.every((x) => x.tools.every((t) => t.startsWith('web_search')) && x.maxUses.every((m) => m <= 4)), JSON.stringify(web));
     assert.ok(web.every((x) => x.bisZu === '10'), 'Ziel: 12 pro Tag minus 2 aus den Quellen');
+    assert.ok(web.every((x) => x.effort === 'low'), 'wenig Aufwand');
     assert.equal(lauf.result_count, 4);
     assert.ok(DB.job_leads.findIndex((l) => l.company === 'Murwerk AG') >= 0);
   });
