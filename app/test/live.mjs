@@ -27,7 +27,8 @@ for (const [geraet, optionen] of [['Laptop', { viewport: { width: 1280, height: 
     await seite.goto(`${ziel}/`, { waitUntil: 'networkidle' });
     const link = seite.locator('a[href="app/anmelden"]').first();
     if (await link.isVisible()) await link.click(); else await seite.goto(`${ziel}/app/anmelden`);
-    await seite.getByRole('heading', { name: /Willkommen zurück/ }).waitFor({ timeout: 10000 });
+    await seite.waitForURL(/\/app\/anmelden$/, { timeout: 10000 });
+    await seite.getByText('Willkommen zurück.').waitFor({ timeout: 10000 });
   });
   await pruefe('Tiefer Link /app/registrieren zeigt das Formular', async () => {
     await seite.goto(`${ziel}/app/registrieren`, { waitUntil: 'networkidle' });
