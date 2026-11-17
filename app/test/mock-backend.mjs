@@ -10,6 +10,7 @@ export function createMock({ dist }) {
     users: [], // { id, email, password }
     tokens: new Map(), // token -> user id
     members: [], job_profile: [], job_leads: [], queue: [], consents: [], feedback: [], runs: [],
+    waitlist: [{ id: 'w-1', email: 'neu@beispiel.at', note: 'Suche Trainee in Graz', source: 'landing', created_at: '2026-11-17T10:00:00Z', invited_at: null, hat_konto: false }],
     invites: [{ code: 'ZS-TEST-0000-0000-0001', days: 30, plan: 'beta', used: 0, max: 5 }, { code: 'ZS-PASS-0000-0000-0002', days: 30, plan: 'pass', used: 0, max: 5 }],
     admins: new Set(),
     files: new Map(),
@@ -108,6 +109,22 @@ export function createMock({ dist }) {
       if (!db.admins.has(uid)) return send(res, 403, { code: '42501', message: 'kein_admin' });
       return send(res, 200, { stand: now(), nutzer: db.members.length, aktiv: db.members.length, probe: 0, zahlend: 0, gekuendigt: 0, zahlung_offen: 0, aktiv_7_tage: 1, kosten_heute: 0.12, kosten_7_tage: 0.5, kosten_30_tage: 1.2, laeufe_30_tage: { scout: 3, writer: 4 }, warteschlange: 0, warteliste: 2, fehler: [], mitglieder: db.members.map((x) => ({ id: x.user_id.slice(0, 8), email: db.users.find((u) => u.id === x.user_id)?.email, plan: x.plan, sub_status: null, valid_until: x.valid_until, cancel_at_period_end: false, joined_at: x.joined_at, treffer: db.job_leads.filter((l) => l.user_id === x.user_id).length, beworben: 0, kosten_30: 0.4 })) });
     }
+    if (name.startsWith('admin_') && !db.admins.has(uid)) return send(res, 403, { code: '42501', message: 'kein_admin' });
+    if (name === 'admin_warteliste') return send(res, 200, db.waitlist);
+    if (name === 'admin_einladen') {
+      const w = db.waitlist.find((x) => x.id === body.p_id);
+      if (!w) return send(res, 404, { code: 'P0002', message: 'nicht_gefunden' });
+      w.invited_at = now();
+      const code = `JB-${randomUUID().slice(0, 4).toUpperCase()}-0000-0000-0001`;
+      db.invites.push({ code, days: 30, plan: 'beta', used: 0, max: 1 });
+      return send(res, 200, JSON.stringify(code));
+    }
+    if (name === 'admin_codes') {
+      const neu = Array.from({ length: body.p_anzahl }, (_, i) => `JB-TEST-${String(i).padStart(4, '0')}-0000-0000`);
+      neu.forEach((code) => db.invites.push({ code, days: body.p_tage, plan: 'beta', used: 0, max: 1, note: body.p_notiz, created_at: now() }));
+      return send(res, 200, neu);
+    }
+    if (name === 'admin_offene_codes') return send(res, 200, db.invites.filter((i) => i.used < i.max).map((i) => ({ code: i.code, note: i.note ?? null, days: i.days, expires_at: null, created_at: i.created_at ?? now() })));
     if (name === 'redeem_code') {
       const inv = db.invites.find((i) => i.code === body.p_code && i.used < i.max);
       if (!inv) return send(res, 200, { ok: false, grund: 'code' });

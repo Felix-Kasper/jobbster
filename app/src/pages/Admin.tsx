@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { adminOverview, ApiError } from '../lib/api';
+import { adminCodes, adminEinladen, adminOffeneCodes, adminOverview, adminWarteliste, ApiError, type OffenerCode, type WartelisteEintrag } from '../lib/api';
+import { MARKE } from '../lib/config';
 import { formatDate, formatDateTime } from '../lib/logic';
 
 type Mitglied = { id: string; email: string; plan: string; sub_status: string | null; valid_until: string | null; cancel_at_period_end: boolean; joined_at: string; treffer: number; beworben: number; kosten_30: number };
@@ -11,6 +12,122 @@ type Daten = {
 };
 
 const usd = (n: number) => `${Number(n).toFixed(2).replace('.', ',')} $`;
+const fehlerText = (e: unknown) => (e instanceof ApiError ? e.message : 'Das hat nicht geklappt.');
+
+/** Fertige Einladung als Mail. Öffnet das Mailprogramm, gesendet wird von Hand. */
+export function einladungsMail(email: string, code: string, registrieren: string): string {
+  const text = [
+    'Hallo,',
+    '',
+    `danke für dein Interesse an ${MARKE}. Hier ist dein persönlicher Zugang, 30 Tage gratis:`,
+    '',
+    `Code: ${code}`,
+    `Konto anlegen: ${registrieren}`,
+    '',
+    'Du lädst deinen Lebenslauf hoch, beschreibst deinen perfekten Job, und ab dann liegen jeden Morgen passende Stellen bereit. Anschreiben schreibt Jobbster auf Knopfdruck, gesendet wird immer von dir.',
+    '',
+    'Über eine kurze Rückmeldung nach ein paar Tagen freue ich mich sehr: Was hilft dir, was nervt?',
+    '',
+    'Viele Grüße',
+  ].join('\n');
+  return `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(`Dein Zugang zu ${MARKE}`)}&body=${encodeURIComponent(text)}`;
+}
+const registrierLink = () => `${window.location.origin}${import.meta.env.BASE_URL}registrieren`;
+
+function Warteliste() {
+  const [liste, setListe] = useState<WartelisteEintrag[] | null>(null);
+  const [codes, setCodes] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState('');
+  const laden = useCallback(() => { adminWarteliste().then(setListe).catch((e: unknown) => setMsg(fehlerText(e))); }, []);
+  useEffect(() => { laden(); }, [laden]);
+
+  async function einladen(w: WartelisteEintrag) {
+    setBusy(w.id); setMsg('');
+    try {
+      const code = await adminEinladen(w.id);
+      setCodes((c) => ({ ...c, [w.id]: code }));
+      laden();
+    } catch (e) { setMsg(fehlerText(e)); } finally { setBusy(null); }
+  }
+
+  if (!liste) return <p className="muted">{msg || 'Lädt …'}</p>;
+  const offen = liste.filter((w) => !w.invited_at && !w.hat_konto);
+  return (
+    <section className="stack">
+      <h2 className="h2">Warteliste <span className="muted">({offen.length} offen)</span></h2>
+      {msg && <div className="banner bad" role="alert">{msg}</div>}
+      {liste.length === 0 ? <p className="muted">Noch niemand auf der Warteliste.</p> : (
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>E-Mail</th><th>Nachricht</th><th>Seit</th><th>Stand</th><th /></tr></thead>
+            <tbody>
+              {liste.map((w) => (
+                <tr key={w.id}>
+                  <td>{w.email}</td>
+                  <td style={{ whiteSpace: 'normal', maxWidth: 320 }}>{w.note || <span className="muted">·</span>}</td>
+                  <td>{formatDate(w.created_at)}</td>
+                  <td>{w.hat_konto ? 'hat ein Konto' : w.invited_at ? `eingeladen ${formatDate(w.invited_at)}` : 'wartet'}</td>
+                  <td className="r">
+                    {codes[w.id] ? (
+                      <span className="row" style={{ justifyContent: 'flex-end' }}>
+                        <span className="nums">{codes[w.id]}</span>
+                        <a className="btn" href={einladungsMail(w.email, codes[w.id], registrierLink())}>Mail öffnen</a>
+                      </span>
+                    ) : !w.hat_konto && <button className="btn second" disabled={busy === w.id} onClick={() => { void einladen(w); }}>{w.invited_at ? 'Neuer Code' : 'Code erzeugen'}</button>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <p className="muted small">„Code erzeugen“ macht einen persönlichen Code (30 Tage, einmal einlösbar). „Mail öffnen“ öffnet dann eine fertige Einladung in deinem Mailprogramm. Absenden musst du selbst.</p>
+    </section>
+  );
+}
+
+function Codes() {
+  const [offen, setOffen] = useState<OffenerCode[] | null>(null);
+  const [neu, setNeu] = useState<string[]>([]);
+  const [anzahl, setAnzahl] = useState(5);
+  const [notiz, setNotiz] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  const laden = useCallback(() => { adminOffeneCodes().then(setOffen).catch((e: unknown) => setMsg(fehlerText(e))); }, []);
+  useEffect(() => { laden(); }, [laden]);
+
+  async function erzeugen() {
+    setBusy(true); setMsg('');
+    try {
+      const c = await adminCodes(anzahl, 30, notiz);
+      setNeu(c);
+      try { await navigator.clipboard.writeText(c.join('\n')); setMsg('Erzeugt und in die Zwischenablage kopiert.'); } catch { setMsg('Erzeugt.'); }
+      laden();
+    } catch (e) { setMsg(fehlerText(e)); } finally { setBusy(false); }
+  }
+
+  return (
+    <section className="stack">
+      <h2 className="h2">Codes <span className="muted">({offen?.length ?? 0} noch nicht eingelöst)</span></h2>
+      <div className="row" style={{ gap: 8, alignItems: 'flex-end' }}>
+        <label className="field" style={{ width: 110 }}><span>Anzahl</span><input type="number" min={1} max={50} value={anzahl} onChange={(e) => setAnzahl(Math.max(1, Math.min(50, Number(e.target.value) || 1)))} /></label>
+        <label className="field" style={{ flex: 1, minWidth: 200 }}><span>Notiz (für wen?)</span><input value={notiz} maxLength={200} onChange={(e) => setNotiz(e.target.value)} placeholder="zum Beispiel MCI Jahrgang 2027" /></label>
+        <button className="btn" disabled={busy} onClick={() => { void erzeugen(); }}>Codes erzeugen</button>
+      </div>
+      {msg && <p className="muted small" role="status">{msg}</p>}
+      {neu.length > 0 && <pre className="card nums" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{neu.join('\n')}</pre>}
+      {offen && offen.length > 0 && (
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Code</th><th>Notiz</th><th className="r">Tage</th><th>Einlösbar bis</th><th>Erzeugt</th></tr></thead>
+            <tbody>{offen.map((c) => <tr key={c.code}><td className="nums">{c.code}</td><td>{c.note ?? '·'}</td><td className="r">{c.days}</td><td>{c.expires_at ? formatDate(c.expires_at) : 'unbegrenzt'}</td><td>{formatDate(c.created_at)}</td></tr>)}</tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
 
 export default function Admin() {
   const [d, setD] = useState<Daten | null>(null);
@@ -43,6 +160,8 @@ export default function Admin() {
         <h2 className="h2">Läufe in 30 Tagen</h2>
         <p className="muted">{Object.entries(d.laeufe_30_tage ?? {}).map(([k, v]) => `${({ scout: 'Suche', writer: 'Entwurf', coach: 'Vorbereitung', profil: 'Profil-Vorschlag' } as Record<string, string>)[k] ?? k}: ${v}`).join(' · ') || 'Noch keine.'}</p>
       </section>
+      <Warteliste />
+      <Codes />
       <section className="stack">
         <h2 className="h2">Mitglieder</h2>
         <div className="table-wrap">
@@ -72,7 +191,7 @@ export default function Admin() {
       </section>
       <section className="card stack">
         <h2 className="h2">Betrieb</h2>
-        <p className="muted small">Not-Aus, Tageslimit, Grenzen und Codes stellst du im SQL-Editor von Supabase ein. Befehle stehen in der Doku im Repo unter BETRIEB.md.</p>
+        <p className="muted small">Not-Aus, Tageslimit und Grenzen stellst du im SQL-Editor von Supabase ein. Befehle stehen in der Doku im Repo unter BETRIEB.md.</p>
       </section>
     </div>
   );

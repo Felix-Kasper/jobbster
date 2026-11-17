@@ -108,6 +108,34 @@ export async function adminOverview(): Promise<Record<string, unknown>> {
   return data as Record<string, unknown>;
 }
 
+export type WartelisteEintrag = { id: string; email: string; note: string | null; source: string | null; created_at: string; invited_at: string | null; hat_konto: boolean };
+export type OffenerCode = { code: string; note: string | null; days: number; expires_at: string | null; created_at: string };
+
+export async function adminWarteliste(): Promise<WartelisteEintrag[]> {
+  const { data, error } = await supabase.rpc('admin_warteliste');
+  if (error) fail(error, 'Die Warteliste konnte nicht geladen werden.');
+  return (data ?? []) as WartelisteEintrag[];
+}
+
+/** Persönlichen Code für einen Eintrag der Warteliste erzeugen. Der Eintrag gilt danach als eingeladen. */
+export async function adminEinladen(id: string): Promise<string> {
+  const { data, error } = await supabase.rpc('admin_einladen', { p_id: id });
+  if (error) fail(error, 'Der Code konnte nicht erzeugt werden.');
+  return String(data);
+}
+
+export async function adminCodes(anzahl: number, tage: number, notiz: string): Promise<string[]> {
+  const { data, error } = await supabase.rpc('admin_codes', { p_anzahl: anzahl, p_tage: tage, p_notiz: notiz });
+  if (error) fail(error, 'Die Codes konnten nicht erzeugt werden.');
+  return (data ?? []) as string[];
+}
+
+export async function adminOffeneCodes(): Promise<OffenerCode[]> {
+  const { data, error } = await supabase.rpc('admin_offene_codes');
+  if (error) fail(error, 'Die Codes konnten nicht geladen werden.');
+  return (data ?? []) as OffenerCode[];
+}
+
 export async function redeemCode(code: string): Promise<{ ok: boolean; grund?: string; gueltig_bis?: string; tarif?: string }> {
   const { data, error } = await supabase.rpc('redeem_code', { p_code: code.trim().toUpperCase() });
   if (error) fail(error);

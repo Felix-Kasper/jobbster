@@ -203,6 +203,25 @@ async function lauf(name, kontext, email) {
   await page.goto(`${BASE}/admin`);
   await page.waitForURL('**/treffer');
   ok('Admin-Bereich für normale Nutzer gesperrt');
+  const ich = db.users.find((u) => u.email === email).id;
+  db.admins.add(ich);
+  db.waitlist[0].invited_at = null;
+  await page.goto(`${BASE}/admin`);
+  await page.getByRole('heading', { name: /Warteliste/ }).waitFor();
+  await page.getByText('Suche Trainee in Graz').waitFor();
+  await page.getByRole('button', { name: 'Code erzeugen' }).click();
+  await page.getByText(/^JB-[0-9A-F]{4}-0000-0000-0001$/).waitFor();
+  const mail = await page.getByRole('link', { name: 'Mail öffnen' }).getAttribute('href');
+  assert.match(decodeURIComponent(mail), /^mailto:neu@beispiel\.at\?subject=Dein Zugang zu Jobbster&body=[^]*Code: JB-[^]*\/registrieren/);
+  assert.ok(!decodeURIComponent(mail).includes('–'));
+  assert.ok(db.waitlist[0].invited_at, 'Eintrag gilt als eingeladen');
+  await page.locator('input[type=number]').fill('3');
+  await page.getByRole('button', { name: 'Codes erzeugen' }).click();
+  await page.getByText('JB-TEST-0002-0000-0000').first().waitFor();
+  await breiteOk('Admin');
+  await page.screenshot({ path: path.join(OUT, `${name}-admin.png`), fullPage: true });
+  db.admins.delete(ich);
+  ok('Admin: Warteliste mit Code per Mail, Codes erzeugen');
 
   // 10. Profil bearbeiten
   await page.goto(`${BASE}/profil`);
