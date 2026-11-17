@@ -135,7 +135,7 @@ LÄNGEN
 - pre_info: was im Portal anzugeben ist, soweit bekannt. Sonst leer.
 - leitgedanke: der eine Gedanke, der den Text trägt, in einem Satz.`;
 
-export const coachRecherche = ({ heute, stufe }) => `Du recherchierst für ein Vorstellungsgespräch (${stufe === 'interview2' ? 'zweite Runde' : 'Erstgespräch'}). Heute ist ${heute}. Höchstens 8 Suchen und 4 Abrufe.
+export const coachRecherche = ({ heute, stufe }) => `Du recherchierst für ein Vorstellungsgespräch (${stufe === 'interview2' ? 'zweite Runde' : 'Erstgespräch'}). Heute ist ${heute}. Höchstens 6 Suchen und 2 Abrufe.
 
 Sammle knapp, mit Quelle (Titel und Link):
 - Gesprächspartner laut Einladung: Rolle, Werdegang in 1 Satz, öffentliche Themen. Nur Berufliches aus öffentlichen Quellen. Kein Privatleben, keine Spekulation. Findest du nichts Belastbares, schreibe „öffentlich wenig gefunden“.

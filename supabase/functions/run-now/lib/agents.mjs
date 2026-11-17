@@ -346,8 +346,9 @@ export async function vorbereitung({ claude, profil, lead, stufe = 'interview1',
   let recherche = null;
   try {
     recherche = await claude.zugMitWerkzeugen(
-      { model: c.modellRecherche, system: P.coachRecherche({ heute, stufe }), user: `${stelle}\n\n${einladung}`, maxTokens: 8000 },
-      werkzeuge(c.variante, { suchen: 8, abrufe: 4, ...ortFuerSuche(profil) }),
+      // Gemessen 17.11.: 8 Suchen mit Nachdenken kosteten 9 Cent. Die Recherche sammelt nur, das Denken passiert im Text danach.
+      { model: c.modellRecherche, system: P.coachRecherche({ heute, stufe }), user: `${stelle}\n\n${einladung}`, maxTokens: 8000, denken: false },
+      werkzeuge(c.variante, { suchen: 6, abrufe: 2, ...ortFuerSuche(profil) }),
     );
   } catch (e) {
     hinweise.push(`Recherche fehlgeschlagen: ${String(e.message).slice(0, 120)}`);
