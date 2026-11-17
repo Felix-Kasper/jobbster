@@ -1,17 +1,19 @@
 // @ts-check
 // Jobbster · Stellen-Quellen: echte Anzeigen aus öffentlichen Schnittstellen statt aus der Websuche.
 //   Deutschland: Jobsuche der Bundesagentur für Arbeit (dokumentiert unter jobsuche.api.bund.dev)
-//   Österreich:  EURES, das europäische Jobportal (enthält die Stellen des AMS)
+//   Österreich:  EURES, das europäische Jobportal (enthält die Stellen des AMS), dazu die Auslandssuche der Arbeitsagentur
+//   Schweiz:     EURES
 // Ohne Abhängigkeiten, läuft in Node und in Deno. Der Abruf (holen) wird übergeben, damit Tests ohne Netz laufen.
 // Beide Schnittstellen sind öffentlich, aber ohne Vertrag: Fällt eine aus, meldet dieses Modul einen Hinweis
 // und liefert, was die andere hergibt. `node worker/tools/quellen-probe.mjs` prüft beide von Hand.
 
 /**
  * @typedef {(url: string, init?: RequestInit) => Promise<Response>} Holen
- * @typedef {{ quelle: string, id: string, titel: string, firma: string | null, ort: string | null, land: 'DE' | 'AT',
+ * @typedef {'DE' | 'AT' | 'CH'} Land
+ * @typedef {{ quelle: string, id: string, titel: string, firma: string | null, ort: string | null, land: Land,
  *   datum: string | null, url: string, beschreibung: string, mail: string | null, bewerbung: string, ortRang: number,
- *   nah?: boolean, gehalt?: string | null, start?: string | null, punkte?: number }} Kandidat
- * @typedef {{ name: string, rang: number, quelle: 'ba', wo: string } | { name: string, rang: number, quelle: 'eures', nuts: string[], nah: string[] }} Suchort
+ *   nah?: boolean, gehalt?: string | null, start?: string | null, stufe?: number, imText?: boolean, punkte?: number }} Kandidat
+ * @typedef {{ name: string, rang: number, quelle: 'ba', wo: string } | { name: string, rang: number, quelle: 'eures', land: Land, nuts: string[], nah: string[] }} Suchort
  */
 
 const BA = 'https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc';
@@ -21,13 +23,13 @@ const EURES = 'https://europa.eu/eures/api/jv-searchengine/public';
 const UA = 'Jobbster/1.0 (Stellensuche für Bewerber)';
 
 export const GRENZEN = {
-  begriffe: 6, // Suchbegriffe je Lauf
+  begriffe: 6, // Suchbegriffe je Lauf, dazu ebenso viele verwandte
   orte: 4, // Orte je Lauf
-  anfragen: 36, // Suchanfragen je Lauf über alle Quellen
+  anfragen: 48, // Suchanfragen je Lauf über alle Quellen
   gleichzeitig: 4,
   wartenMs: 15_000,
   alterTage: 42, // ältere Anzeigen fallen raus
-  umkreisKm: 30,
+  umkreisKm: 40,
   jeAnfrage: 40,
   beschreibung: 1300, // Zeichen je Anzeige für die Bewertung
 };
@@ -143,8 +145,22 @@ const AT_ORT = new Map(Object.entries(AT_REGIONEN).flatMap(([nuts, [, ...orte]])
 const AT_BUNDESLAND = new Map(Object.entries(AT_LAND).map(([nuts, name]) => [name, nuts]));
 /** Wer in Wien sucht, pendelt auch ins Umland: mit durchsuchen und als nah werten. */
 const AT_UMLAND = { at130: { nuts: ['at12'], nah: ['at126', 'at127'] } };
-/** Name einer Region für die Anzeige, zum Beispiel „Region Innsbruck“. */
-export const regionName = (/** @type {unknown} */ nuts3) => /** @type {Record<string, string[]>} */ (AT_REGIONEN)[String(nuts3 ?? '').toLowerCase()]?.[0] ?? null;
+/** Schweiz nach Großregion (NUTS 2). */
+const CH_REGIONEN = {
+  ch01: ['Genferseeregion', 'genf', 'geneve', 'geneva', 'lausanne', 'sion', 'sitten'],
+  ch02: ['Espace Mittelland', 'bern', 'biel', 'freiburg im uechtland', 'fribourg', 'solothurn', 'neuenburg', 'thun'],
+  ch03: ['Nordwestschweiz', 'basel', 'aarau', 'liestal'],
+  ch04: ['Zürich', 'zurich', 'winterthur', 'uster'],
+  ch05: ['Ostschweiz', 'st gallen', 'sankt gallen', 'chur', 'schaffhausen', 'frauenfeld', 'rapperswil'],
+  ch06: ['Zentralschweiz', 'luzern', 'zug', 'schwyz'],
+  ch07: ['Tessin', 'lugano', 'bellinzona', 'locarno'],
+};
+const CH_ORT = new Map(Object.entries(CH_REGIONEN).flatMap(([nuts, [, ...orte]]) => orte.map((o) => /** @type {[string, string]} */ ([o, nuts]))));
+/** Name einer Region für die Anzeige, zum Beispiel „Innsbruck“ (Österreich, NUTS 3) oder „Zürich“ (Schweiz, NUTS 2). */
+export function regionName(/** @type {unknown} */ code) {
+  const c = String(code ?? '').toLowerCase();
+  return /** @type {Record<string, string[]>} */ (AT_REGIONEN)[c]?.[0] ?? /** @type {Record<string, string[]>} */ (CH_REGIONEN)[c.slice(0, 4)]?.[0] ?? null;
+}
 
 /**
  * Orte aus dem Profil den Quellen zuordnen. Reihenfolge = Vorliebe.
@@ -159,15 +175,18 @@ export function ortPlan(orte, heimat = 'AT') {
   liste.forEach((name, rang) => {
     const n = norm(name).replace(/\b(umgebung|und umgebung|raum|grossraum|region|stadt)\b/g, '').trim();
     if (!n || /^(remote|homeoffice|home office|egal|uberall|ueberall)$/.test(n)) return;
-    if (n === 'osterreich' || n === 'oesterreich' || n === 'austria') return void plan.push({ name, rang, quelle: 'eures', nuts: ['at'], nah: [] });
+    if (n === 'osterreich' || n === 'oesterreich' || n === 'austria') return void plan.push({ name, rang, quelle: 'eures', land: 'AT', nuts: ['at'], nah: [] });
+    if (n === 'schweiz' || n === 'switzerland' || n === 'suisse') return void plan.push({ name, rang, quelle: 'eures', land: 'CH', nuts: ['ch'], nah: [] });
     if (n === 'deutschland' || n === 'germany') return void plan.push({ name, rang, quelle: 'ba', wo: '' });
-    const land = AT_BUNDESLAND.get(n);
-    if (land) return void plan.push({ name, rang, quelle: 'eures', nuts: [land], nah: [] });
+    const bundesland = AT_BUNDESLAND.get(n);
+    if (bundesland) return void plan.push({ name, rang, quelle: 'eures', land: 'AT', nuts: [bundesland], nah: [] });
     const region = AT_ORT.get(n) ?? AT_ORT.get(n.split(' ')[0]);
     if (region && !(heimat === 'DE' && n === 'hall')) {
       const umland = /** @type {Record<string, { nuts: string[], nah: string[] }>} */ (AT_UMLAND)[region];
-      return void plan.push({ name, rang, quelle: 'eures', nuts: [region.slice(0, 4), ...(umland?.nuts ?? [])], nah: [region, ...(umland?.nah ?? [])] });
+      return void plan.push({ name, rang, quelle: 'eures', land: 'AT', nuts: [region.slice(0, 4), ...(umland?.nuts ?? [])], nah: [region, ...(umland?.nah ?? [])] });
     }
+    const kanton = CH_ORT.get(n) ?? CH_ORT.get(n.split(' ')[0]);
+    if (kanton && !(heimat === 'DE' && n === 'freiburg')) return void plan.push({ name, rang, quelle: 'eures', land: 'CH', nuts: [kanton], nah: [] });
     plan.push({ name, rang, quelle: 'ba', wo: name });
   });
   return plan.slice(0, GRENZEN.orte);
@@ -214,13 +233,14 @@ const b64 = (/** @type {string} */ s) => btoa(String.fromCharCode(...new TextEnc
 
 /**
  * @param {Holen} holen
- * @param {{ was: string, wo: string, rang: number, angebotsart?: number }} p
+ * @param {{ was: string, wo: string, rang: number, angebotsart?: number, stufe?: number, landesweit?: boolean }} p
  * @returns {Promise<Kandidat[]>}
  */
-export async function baSuche(holen, { was, wo, rang, angebotsart = 1 }) {
+export async function baSuche(holen, { was, wo, rang, angebotsart = 1, stufe = 1, landesweit = false }) {
   // zeitarbeit und pav (private Arbeitsvermittlung) aus: Bewerber wollen den Arbeitgeber kennen, nicht einen Vermittler
   const q = new URLSearchParams({ was, angebotsart: String(angebotsart), veroeffentlichtseit: '28', zeitarbeit: 'false', pav: 'false', size: String(GRENZEN.jeAnfrage), page: '1' });
-  if (wo) { q.set('wo', wo); q.set('umkreis', String(GRENZEN.umkreisKm)); }
+  if (wo) q.set('wo', wo);
+  if (wo && !landesweit) q.set('umkreis', String(GRENZEN.umkreisKm));
   const r = await json(holen, `${BA}/v6/jobs?${q}`, baKopf);
   // Die Arbeitsagentur „verbessert“ unbekannte Orte (aus Wien wird Sien). Nur übernehmen, wenn sie den Ort wirklich kennt.
   if (wo) {
@@ -229,12 +249,14 @@ export async function baSuche(holen, { was, wo, rang, angebotsart = 1 }) {
   }
   return (r?.ergebnisliste ?? []).filter((/** @type {any} */ s) => s?.referenznummer && s?.stellenangebotsTitel).map((/** @type {any} */ s) => {
     const adresse = s.stellenlokationen?.[0]?.adresse ?? {};
+    const land = norm(adresse.land);
     return {
       quelle: 'Arbeitsagentur', id: String(s.referenznummer), titel: klartext(s.stellenangebotsTitel), firma: klartext(s.firma) || null,
-      ort: klartext(adresse.ort) || null, land: /** @type {'DE' | 'AT'} */ (adresse.land === 'OESTERREICH' ? 'AT' : 'DE'),
+      ort: klartext(adresse.ort) || null, land: /** @type {Land} */ (land.includes('sterreich') ? 'AT' : land.includes('schweiz') ? 'CH' : landesweit && norm(wo).includes('sterreich') ? 'AT' : 'DE'),
       datum: tag(s.datumErsteVeroeffentlichung ?? s.veroeffentlichungszeitraum?.von),
       url: `https://www.arbeitsagentur.de/jobsuche/jobdetail/${encodeURIComponent(s.referenznummer)}`,
-      beschreibung: '', mail: null, bewerbung: '', ortRang: rang, nah: true, gehalt: baGehalt(s), start: tag(s.eintrittszeitraum?.von),
+      // Landesweite Treffer liegen irgendwo im Land: Ob der Ort passt, entscheidet die Bewertung
+      beschreibung: '', mail: null, bewerbung: '', ortRang: rang, nah: !landesweit, gehalt: baGehalt(s), start: tag(s.eintrittszeitraum?.von), stufe,
     };
   });
 }
@@ -260,26 +282,37 @@ async function baDetails(holen, k) {
 // ---------------------------------------------------------------------------------------------------------------------
 // EURES (Österreich, mit den Stellen des AMS)
 
+/** Wortanfang für die Titelsuche: Endungen ab, wenn genug übrig bleibt. Mehrere Wörter bleiben unverändert. */
+export function wortstamm(/** @type {string} */ begriff) {
+  const b = String(begriff).trim();
+  if (b.includes(' ')) return b;
+  const kurz = b.replace(/(erin|er|ing|ung|in|en|e)$/i, '');
+  return kurz.length >= 6 ? kurz : b;
+}
+
 const EURES_LEER = { sortSearch: 'MOST_RECENT', publicationPeriod: null, occupationUris: [], skillUris: [], requiredExperienceCodes: [], positionScheduleCodes: [], sectorCodes: [], educationAndQualificationLevelCodes: [], positionOfferingCodes: [], euresFlagCodes: [], otherBenefitsCodes: [], requiredLanguages: [], minNumberPost: null, sessionId: 'jobbster' };
 
 /**
  * @param {Holen} holen
- * @param {{ was: string, nuts: string[], nah?: string[], rang: number }} p
+ * @param {{ was: string, nuts: string[], nah?: string[], rang: number, land?: Land, stufe?: number, imText?: boolean }} p
  * @returns {Promise<Kandidat[]>}
  */
-export async function euresSuche(holen, { was, nuts, nah = [], rang }) {
-  const body = { ...EURES_LEER, resultsPerPage: GRENZEN.jeAnfrage, page: 1, keywords: [{ keyword: was, specificSearchCode: 'TITLE' }], locationCodes: nuts };
+export async function euresSuche(holen, { was, nuts, nah = [], rang, land = 'AT', stufe = 1, imText = false }) {
+  // Im Titel sucht EURES nach Wortanfängen: „Controll“ findet Controller, Controllerin und Controlling.
+  // Im Text (imText) sortiert EURES nach Nähe zum Begriff und liefert verwandte Stellen.
+  const keywords = [{ keyword: imText ? was : wortstamm(was), specificSearchCode: imText ? 'EVERYWHERE' : 'TITLE' }];
+  const body = { ...EURES_LEER, sortSearch: imText ? 'BEST_MATCH' : 'MOST_RECENT', resultsPerPage: GRENZEN.jeAnfrage, page: 1, keywords, locationCodes: nuts };
   const r = await json(holen, `${EURES}/jv-search/search`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   return (r?.jvs ?? []).filter((/** @type {any} */ j) => j?.id && j?.title).map((/** @type {any} */ j) => {
     const firma = klartext(j.employer?.name);
     const regionen = Object.values(j.locationMap ?? {}).flat().filter(Boolean).map((r) => String(r).toLowerCase());
     const region = regionen.find((r) => nah.includes(r)) ?? regionen[0];
     return {
-      quelle: 'EURES (AMS)', id: String(j.id), titel: klartext(j.title), firma: firma && !/^siehe beschreibung$/i.test(firma) ? firma : null,
-      ort: regionName(region) ? `Region ${regionName(region)}` : null, land: /** @type {'DE' | 'AT'} */ ('AT'), datum: tag(j.creationDate),
+      quelle: land === 'AT' ? 'EURES (AMS)' : 'EURES', id: String(j.id), titel: klartext(j.title), firma: firma && !/^siehe beschreibung$/i.test(firma) ? firma : null,
+      ort: regionName(region) ? `Region ${regionName(region)}` : null, land: /** @type {Land} */ (land), datum: tag(j.creationDate),
       url: `https://europa.eu/eures/portal/jv-se/jv-details/${encodeURIComponent(j.id)}?lang=de`,
       beschreibung: klartext(j.translations?.de?.description ?? j.description), mail: null, bewerbung: '', ortRang: rang,
-      nah: !nah.length || regionen.some((r) => nah.includes(r)), gehalt: null, start: null,
+      nah: !nah.length || regionen.some((r) => nah.includes(r)), gehalt: null, start: null, stufe, imText,
     };
   });
 }
@@ -308,28 +341,38 @@ async function euresDetails(holen, k) {
 
 /**
  * Alle Quellen abfragen: je Ort und Suchbegriff eine Anfrage, bis das Budget aufgebraucht ist.
- * @param {{ holen: Holen, begriffe: string[], orte: Suchort[], mitPraktikum?: boolean, jetzt?: number }} p
+ * `begriffe` sind die Kernrollen (Stufe 1), `verwandt` ähnliche Rollen zum Auffüllen (Stufe 2).
+ * @param {{ holen: Holen, begriffe: string[], verwandt?: string[], orte: Suchort[], mitPraktikum?: boolean, jetzt?: number }} p
  * @returns {Promise<{ kandidaten: Kandidat[], hinweise: string[], anfragen: number, beantwortet: number }>}
  */
-export async function sammle({ holen, begriffe, orte, mitPraktikum = true, jetzt = Date.now() }) {
+export async function sammle({ holen, begriffe, verwandt = [], orte, mitPraktikum = true, jetzt = Date.now() }) {
   /** @type {{ name: string, lauf: () => Promise<Kandidat[]> }[]} */
   const aufgaben = [];
-  /** @type {Set<string>} */
-  const gebiete = new Set(); // zwei Orte im selben Gebiet (Innsbruck und Hall) nur einmal abfragen
+  /** @type {Suchort[]} */
+  const gebiete = []; // zwei Orte im selben Gebiet (Innsbruck und Hall) nur einmal abfragen
+  const schon = new Set();
   for (const ort of orte) {
     const gebiet = ort.quelle === 'eures' ? `eures|${ort.nuts.join('+')}` : `ba|${norm(ort.wo)}`;
-    if (gebiete.has(gebiet)) continue;
-    gebiete.add(gebiet);
-    for (const was of begriffe) {
-      if (ort.quelle === 'eures') {
-        aufgaben.push({ name: `EURES ${was} ${ort.name}`, lauf: () => euresSuche(holen, { was, nuts: ort.nuts, nah: ort.nah, rang: ort.rang }) });
-        continue;
-      }
-      aufgaben.push({ name: `Arbeitsagentur ${was} ${ort.name}`, lauf: () => baSuche(holen, { was, wo: ort.wo, rang: ort.rang }) });
-      // Trainee-Programme und Praktika führt die Arbeitsagentur als eigene Angebotsart (34)
-      if (mitPraktikum) aufgaben.push({ name: `Arbeitsagentur Trainee ${was} ${ort.name}`, lauf: () => baSuche(holen, { was, wo: ort.wo, rang: ort.rang, angebotsart: 34 }) });
-    }
+    if (!schon.has(gebiet)) gebiete.push(ort);
+    schon.add(gebiet);
   }
+  const eures = (/** @type {Extract<Suchort, { quelle: 'eures' }>} */ ort, /** @type {string} */ was, /** @type {number} */ stufe, imText = false) =>
+    aufgaben.push({ name: `EURES ${was} ${ort.name}`, lauf: () => euresSuche(holen, { was, nuts: ort.nuts, nah: ort.nah, rang: ort.rang, land: ort.land, stufe, imText }) });
+  const ba = (/** @type {Extract<Suchort, { quelle: 'ba' }>} */ ort, /** @type {string} */ was, /** @type {number} */ stufe, angebotsart = 1) =>
+    aufgaben.push({ name: `Arbeitsagentur ${was} ${ort.name}`, lauf: () => baSuche(holen, { was, wo: ort.wo, rang: ort.rang, angebotsart, stufe }) });
+
+  // Reihenfolge = Wichtigkeit, denn das Budget schneidet hinten ab.
+  // 1. Kernbegriffe an allen Orten
+  for (const ort of gebiete) for (const was of begriffe) (ort.quelle === 'eures' ? eures(ort, was, 1) : ba(ort, was, 1));
+  // 2. Trainee-Programme und Praktika führt die Arbeitsagentur als eigene Angebotsart (34)
+  if (mitPraktikum) for (const ort of gebiete) if (ort.quelle === 'ba') for (const was of begriffe.slice(0, 3)) ba(ort, was, 1, 34);
+  // 3. Österreich ist in EURES dünn: Volltextsuche nach den zwei wichtigsten Begriffen, dazu die Auslandssuche der Arbeitsagentur
+  for (const ort of gebiete) if (ort.quelle === 'eures') for (const was of begriffe.slice(0, 2)) eures(ort, was, 2, true);
+  const at = gebiete.find((o) => o.quelle === 'eures' && o.land === 'AT');
+  if (at) for (const was of begriffe.slice(0, 2)) aufgaben.push({ name: `Arbeitsagentur ${was} Österreich`, lauf: () => baSuche(holen, { was, wo: 'Österreich', rang: at.rang, stufe: 2, landesweit: true }) });
+  // 4. Verwandte Rollen zum Auffüllen
+  for (const ort of gebiete) for (const was of verwandt) (ort.quelle === 'eures' ? eures(ort, was, 2) : ba(ort, was, 2));
+
   const geplant = aufgaben.slice(0, GRENZEN.anfragen);
   const antworten = await parallel(geplant, GRENZEN.gleichzeitig, (a) => a.lauf());
 
@@ -347,7 +390,9 @@ export async function sammle({ holen, begriffe, orte, mitPraktikum = true, jetzt
       if (alter !== null && alter > GRENZEN.alterTage) continue;
       const key = `${k.quelle}|${k.id}`;
       const alt = gefunden.get(key);
-      if (!alt || k.ortRang < alt.ortRang) gefunden.set(key, k);
+      // Dieselbe Anzeige aus mehreren Anfragen: die beste Einstufung zählt
+      if (!alt) gefunden.set(key, k);
+      else gefunden.set(key, { ...alt, ortRang: Math.min(alt.ortRang, k.ortRang), stufe: Math.min(alt.stufe ?? 1, k.stufe ?? 1), nah: alt.nah || k.nah, imText: Boolean(alt.imText && k.imText) });
     }
   }
   const hinweise = [...fehler].map(([f, n]) => `Quelle: ${n} von ${geplant.length} Anfragen ohne Ergebnis (${f})`);
@@ -357,24 +402,33 @@ export async function sammle({ holen, begriffe, orte, mitPraktikum = true, jetzt
 
 // Leitung auch als Wortende: Fachbereichsleitung, Teamleiterin, Abteilungsleiter.
 // „Manager“ fehlt mit Absicht: Viele Einstiegsrollen heißen so (Account Manager, Produktmanager). Das entscheidet die Bewertung.
-const HOCH = /\b(senior|sr|head|lead|director|direktor|chef|principal|geschaftsfuhrer|geschaftsfuhrung|experte|expert|vp)\b|(leiter|leiterin|leitung)\b/;
+const LEITUNG = /\b(head|director|direktor|chef|geschaftsfuhrer|geschaftsfuhrung|vp|cfo|ceo|coo)\b|(leiter|leiterin|leitung)\b/;
+const SENIOR = /\b(senior|sr|lead|principal|experte|expert)\b/;
 const EINSTIEG = /\b(junior|jr|trainee|traineeprogramm|graduate|einsteiger|berufseinsteiger|berufseinstieg|absolvent|absolventen|young professional|nachwuchs|praktikum|praktikant|internship|intern)\b/;
 const PRAKTIKUM = /\b(praktikum|praktikant|praktikantin|internship|intern|pflichtpraktikum)\b/;
 const WERKSTUDENT = /\b(werkstudent|werkstudentin|working student|studentische|aushilfe|minijob)\b/;
 const LEHRE = /\b(ausbildung|auszubildende|azubi|lehrling|lehrstelle|duales studium|dual)\b/;
 
-/**
- * Vorsortieren ohne KI: Wie gut passt der Titel? Nur die besten gehen in die (bezahlte) Bewertung.
- * Raus fliegt, was nicht zum Suchbegriff passt, dazu Leitungsrollen, Lehrstellen und Ausschlüsse aus dem Profil.
- * Praktika und Werkstudentenstellen nur, wenn das Profil sie will.
- * Punkte für den Rest: Suchbegriff im Titel, Einstiegs-Wörter, Frische, Wunschort. Bei Gleichstand die frischere Anzeige.
- * @param {Kandidat[]} kandidaten
- * @param {{ begriffe: string[], bekannt?: string[], ausschluesse?: unknown, erfahren?: boolean, praktikum?: boolean, werkstudent?: boolean, max: number, jetzt?: number }} p
- * @returns {Kandidat[]}
- */
-export function vorauswahl(kandidaten, { begriffe, bekannt = [], ausschluesse = '', erfahren = false, praktikum = true, werkstudent = false, max, jetzt = Date.now() }) {
+const wortliste = (/** @type {string[]} */ begriffe) => {
   const worte = begriffe.map(norm).filter(Boolean);
   const staemme = [...new Set(worte.flatMap((w) => w.split(' ')).filter((w) => w.length >= 5).map((w) => w.slice(0, Math.max(5, w.length - 3))))];
+  return { worte, staemme };
+};
+
+/**
+ * Vorsortieren ohne KI: Welche Anzeigen gehen in die (bezahlte) Bewertung, und in welcher Reihenfolge?
+ * Die Liste soll voll werden, also bleibt viel drin, aber in klarer Rangfolge:
+ *   Kernrolle im Titel vor verwandter Rolle vor „kommt nur im Text vor“, Einstieg vor Senior, frisch vor alt, nah vor fern.
+ * Ganz raus fliegen nur: Leitungsrollen (außer das Profil sucht sie), Lehrstellen, Werkstudentenstellen ohne Wunsch,
+ * Ausschlüsse aus dem Profil, schon bekannte Firmen und Titel ohne jeden Bezug.
+ * Senior-Rollen und ungewollte Praktika bleiben mit Abzug als Reserve: lieber etwas Anspruchsvolleres als eine leere Liste.
+ * @param {Kandidat[]} kandidaten
+ * @param {{ begriffe: string[], verwandt?: string[], bekannt?: string[], ausschluesse?: unknown, erfahren?: boolean, praktikum?: boolean, werkstudent?: boolean, max: number, jetzt?: number }} p
+ * @returns {Kandidat[]}
+ */
+export function vorauswahl(kandidaten, { begriffe, verwandt = [], bekannt = [], ausschluesse = '', erfahren = false, praktikum = true, werkstudent = false, max, jetzt = Date.now() }) {
+  const kern = wortliste(begriffe);
+  const neben = wortliste(verwandt);
   const tabu = norm(Array.isArray(ausschluesse) ? ausschluesse.join(' ') : ausschluesse).split(' ').filter((w) => w.length >= 5);
   const schon = new Set(bekannt.map(firmaKey).filter(Boolean));
 
@@ -384,16 +438,22 @@ export function vorauswahl(kandidaten, { begriffe, bekannt = [], ausschluesse = 
     const fk = firmaKey(k.firma);
     if (fk && schon.has(fk)) continue;
     const t = norm(k.titel);
-    // Harte Ausschlüsse: Der Titel muss zum Suchbegriff passen. Leitungsrollen, Lehrstellen und Ausgeschlossenes gehen nie in die Bewertung.
-    const genau = worte.some((w) => t.includes(w));
-    if (!genau && !staemme.some((s) => t.includes(s))) continue;
     const einstieg = EINSTIEG.test(t);
-    if ((!erfahren && HOCH.test(t) && !einstieg) || LEHRE.test(t) || tabu.some((w) => t.includes(w))) continue;
-    if ((!praktikum && PRAKTIKUM.test(t)) || (!werkstudent && WERKSTUDENT.test(t))) continue;
-    let punkte = (genau ? 40 : 25) + (einstieg ? 25 : 0);
+    if ((!erfahren && LEITUNG.test(t) && !einstieg) || LEHRE.test(t) || tabu.some((w) => t.includes(w))) continue;
+    if (!werkstudent && WERKSTUDENT.test(t)) continue;
+
+    const bezug = kern.worte.some((w) => t.includes(w)) ? 40
+      : kern.staemme.some((s) => t.includes(s)) ? 30
+        : neben.worte.some((w) => t.includes(w)) ? 22
+          : neben.staemme.some((s) => t.includes(s)) ? 15
+            : k.imText ? 8 : 0; // Begriff steht nur im Anzeigentext
+    if (!bezug) continue;
+    let punkte = bezug + (einstieg ? 25 : 0);
+    if (!erfahren && SENIOR.test(t) && !einstieg) punkte -= 25; // anspruchsvoller: bleibt als Reserve, aber hinter normalen Rollen
+    if (!praktikum && PRAKTIKUM.test(t)) punkte -= 45; // ungewolltes Praktikum: nur als letzte Reserve
     const alter = alterTage(k.datum, jetzt);
     if (alter !== null) punkte += alter <= 4 ? 15 : alter <= 14 ? 8 : alter <= 28 ? 3 : 0;
-    punkte += k.nah === false ? 2 : k.ortRang === 0 ? 10 : k.ortRang === 1 ? 5 : 0; // gleiches Bundesland, aber nicht Pendelnähe: kleiner Bonus
+    punkte += k.nah === false ? 2 : k.ortRang === 0 ? 10 : k.ortRang === 1 ? 5 : 0; // gleiches Land, aber nicht Pendelnähe: kleiner Bonus
     if (!k.firma) punkte -= 5; // Firma steht nur im Text: geht, ist aber unsicherer
     const mit = { ...k, punkte };
     // Jede Firma höchstens einmal; anonyme Anzeigen (Firma nur im Text) zählen einzeln

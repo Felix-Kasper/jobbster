@@ -114,7 +114,7 @@ const leadJson = (company, title, url, extra = {}) => ({
 function claude(req, res, body) {
   const tools = (body.tools || []).map((t) => t.type);
   const hatAssistant = body.messages.some((m) => m.role === 'assistant');
-  apiLog.push({ model: body.model, tools, format: Boolean(body.output_config), system: body.system.slice(0, 30), bisZu: /Ziel sind (\d+) gute Treffer/.exec(body.system)?.[1] });
+  apiLog.push({ model: body.model, tools, maxUses: (body.tools || []).map((t) => t.max_uses ?? null), thinking: body.thinking?.type ?? null, format: Boolean(body.output_config), system: body.system.slice(0, 30), bisZu: /Ziel sind (\d+) gute Treffer/.exec(body.system)?.[1] });
   if (!req.headers['x-api-key']) return send(res, 401, { error: { message: 'x-api-key fehlt' } });
   if (tools.includes('web_search_20260318')) return send(res, 400, { error: { message: 'web_search_20260318 requires allowed_callers' } });
   const ok = (text, usage) => send(res, 200, { role: 'assistant', stop_reason: 'end_turn', content: [{ type: 'text', text }], usage });
@@ -330,11 +330,19 @@ try {
     assert.ok(!DB.job_leads.some((l) => /erfunden|Gibt es nicht/.test(`${l.url} ${l.company}`)), 'erfundene Links und Treffer der KI kommen nicht durch');
   });
   pruefe('Quellen: Leitungsrolle und schon bekannte Firma gehen gar nicht erst in die Bewertung', () => assert.ok(!abrufe.some((u) => /\/jv\/id\/g[34]/.test(u))));
-  pruefe('Quellen: keine Websuche, Kosten unter 1 Cent', () => {
-    assert.ok(apiLog.slice(vorher).every((x) => x.tools.length === 0));
-    assert.equal(lauf.searches, 0);
-    assert.equal(lauf.result_count, 2);
-    assert.ok(lauf.cost_usd > 0 && lauf.cost_usd < 0.01, `Kosten ${lauf.cost_usd}`);
+  const aufrufe8 = apiLog.slice(vorher);
+  pruefe('Quellen: Suchplan und Bewertung ohne Werkzeuge und ohne Nachdenken', () => {
+    const ohne = aufrufe8.filter((x) => x.tools.length === 0);
+    assert.equal(ohne.length >= 2, true);
+    assert.ok(ohne.slice(0, 2).every((x) => x.thinking === 'disabled'));
+  });
+  pruefe('Quellen: fehlende Treffer ergänzt eine kleine Websuche (höchstens 4 Suchen, keine Abrufe), Quellen-Treffer zuerst', () => {
+    const web = aufrufe8.filter((x) => x.tools.length > 0);
+    assert.ok(web.length >= 1);
+    assert.ok(web.every((x) => x.tools.every((t) => t.startsWith('web_search')) && x.maxUses.every((m) => m <= 4)), JSON.stringify(web));
+    assert.ok(web.every((x) => x.bisZu === '10'), 'Ziel: 12 pro Tag minus 2 aus den Quellen');
+    assert.equal(lauf.result_count, 4);
+    assert.ok(DB.job_leads.findIndex((l) => l.company === 'Murwerk AG') >= 0);
   });
 
   still(`\n${bestanden} Prüfungen bestanden.`);
