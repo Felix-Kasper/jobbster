@@ -57,7 +57,10 @@ const RAUCHTEST_CODE = 'ZS-FCA8-93EE-8FE5-206E';
   console.log('\nNeuer Nutzer, von der Registrierung bis zur App');
   const { jsPDF } = await import('jspdf');
   const doc = new jsPDF();
-  ['Rauch Test', 'Bachelor Betriebswirtschaft, Abschluss Februar 2027', 'Praktikum Controlling, 6 Monate: Reporting in Power BI'].forEach((z, i) => doc.text(z, 15, 20 + i * 8));
+  ['Rauch Test, Innsbruck', 'Bachelor Betriebswirtschaft, Management Center Innsbruck, Abschluss Februar 2027', '',
+    'Praktikum Controlling bei einem Maschinenbauer, 6 Monate (2025):', 'Monatsreporting in Excel und Power BI aufgebaut, Abweichungsanalysen',
+    'Werkstudent Buchhaltung bei einer Steuerberatung seit 2024: Belegprüfung, BMD', '',
+    'Kenntnisse: Excel (Pivot, Power Query), Power BI, SAP-Grundlagen', 'Sprachen: Deutsch Muttersprache, Englisch C1'].forEach((z, i) => doc.text(z, 15, 20 + i * 8));
   const cv = (await import('node:path')).join((await import('node:os')).tmpdir(), 'rauchtest-lebenslauf.pdf');
   (await import('node:fs')).writeFileSync(cv, Buffer.from(doc.output('arraybuffer')));
 
@@ -112,7 +115,13 @@ const RAUCHTEST_CODE = 'ZS-FCA8-93EE-8FE5-206E';
     await pruefe('Abmelden und wieder anmelden', async () => {
       await seite.goto(`${ziel}/app/konto`, { waitUntil: 'networkidle' });
       await seite.getByRole('button', { name: 'Abmelden' }).first().click();
-      await seite.waitForURL('**/anmelden', { timeout: 10000 });
+      try {
+        await seite.waitForURL('**/anmelden', { timeout: 10000 });
+      } catch (e) {
+        await seite.screenshot({ path: 'rauchtest-abmelden.png', fullPage: true });
+        console.log(`    Adresse: ${seite.url()} Sichtbar: ${(await seite.locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 400)}`);
+        throw e;
+      }
       await seite.getByLabel('E-Mail-Adresse').fill(email);
       await seite.getByLabel('Passwort').fill(pw);
       await seite.getByRole('button', { name: 'Anmelden' }).click();
