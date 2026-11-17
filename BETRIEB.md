@@ -17,6 +17,9 @@ update public.app_config set value = '{"scout": {"anzahl": 2, "tage": 1}, "entwu
 ```
 
 ## Codes
+Im Admin-Bereich der App unter „Codes“: Anzahl und Notiz eingeben, „Codes erzeugen“ (30 Tage, einmal einlösbar, bis 60 Tage nach Erzeugen einlösbar). Die Liste zeigt alle noch nicht eingelösten. Neue Codes beginnen mit `JB-`, alte `ZS-` bleiben gültig.
+
+Sonderfälle im SQL-Editor:
 ```sql
 select * from public.create_invites(5, 30, 'pass', 'Verkauf KW 49');        -- 30 Tage Zugang
 select * from public.create_invites(1, 30, 'garantie', 'Garantie-Monat Lena'); -- Garantie-Monat
@@ -32,6 +35,9 @@ update public.members set status = 'gesperrt' where user_id = (select id from au
 Passwort zurücksetzen: Supabase → Authentication → Users → Nutzer → „Send password recovery“ geht erst mit eigenem Mailversand. Bis dahin: Nutzer löschen lassen und neu einladen, oder in der Nutzerzeile ein neues Passwort setzen.
 
 ## Warteliste
+Im Admin-Bereich unter „Warteliste“: bei einem Eintrag „Code erzeugen“, dann „Mail öffnen“. Das Mailprogramm öffnet eine fertige Einladung mit Code und Link, du sendest selbst. Wer schon ein Konto hat, ist markiert.
+
+Im SQL-Editor:
 ```sql
 select email, source, note, created_at from public.waitlist where invited_at is null order by created_at;
 update public.waitlist set invited_at = now() where email = 'ADRESSE';
@@ -41,6 +47,8 @@ update public.waitlist set invited_at = now() where email = 'ADRESSE';
 Admin-Bereich in der App zeigt die letzten 20. Protokolle der Funktionen: Supabase → Edge Functions → Logs. Worker: GitHub → Actions → Worker.
 
 ## Stellensuche
+Jeden Morgen um 4:50 (Winterzeit) prüft der Ablauf „Quellen-Probe“ beide Schnittstellen. Liefert eine nichts, schlägt er fehl und GitHub schickt dir eine Mail.
+
 Die tägliche Suche holt echte Anzeigen aus zwei öffentlichen Schnittstellen: Jobsuche der Arbeitsagentur (Deutschland) und EURES (Österreich, mit den Stellen des AMS). Die KI plant nur die Suchbegriffe und bewertet die Vorauswahl. Kosten: unter 1 Cent pro Lauf.
 
 - **Findet ein Nutzer nichts?** GitHub → Actions → „Quellen-Probe“ → Run workflow, mit seinen Suchbegriffen und Orten. Der Lauf zeigt, was die Schnittstellen liefern und ob die Links gehen. Er kostet nichts.

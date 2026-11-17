@@ -3,6 +3,9 @@ name: Quellen-Probe
 # Diagnose von Hand: fragt die Stellen-Quellen (Arbeitsagentur, EURES) wirklich ab und zeigt, was der Scout sehen würde.
 # Braucht keine Secrets, nutzt keine KI, schreibt nichts. Schlägt fehl, wenn keine Quelle antwortet.
 on:
+  # Jeden Morgen vor dem Worker: Fällt eine Schnittstelle aus, schlägt der Lauf fehl und GitHub schickt eine Mail.
+  schedule:
+    - cron: '50 3 * * *'
   workflow_dispatch:
     inputs:
       begriffe:
@@ -28,5 +31,5 @@ jobs:
           node-version: 22
       - run: node worker/tools/quellen-probe.mjs "$BEGRIFFE" "$ORTE"
         env:
-          BEGRIFFE: ${{ inputs.begriffe }}
-          ORTE: ${{ inputs.orte }}
+          BEGRIFFE: ${{ inputs.begriffe || 'Controller,Controlling' }}
+          ORTE: ${{ inputs.orte || 'Innsbruck,München' }}

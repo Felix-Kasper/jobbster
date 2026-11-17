@@ -36,4 +36,8 @@ for (const k of zeigen) {
   const status = await fetch(k.url, { redirect: 'follow', headers: { 'User-Agent': 'Mozilla/5.0 (Jobbster Linkprüfung)' } }).then((r) => r.status).catch((e) => e.message);
   console.log(`Link ${status}: ${k.url}`);
 }
-if (!roh.beantwortet) process.exitCode = 1;
+// Morgendliche Prüfung: Jede Quelle muss antworten und etwas liefern, sonst schlägt der Lauf fehl
+const jeQuelleAnzahl = Object.groupBy(roh.kandidaten, (k) => (k.quelle.startsWith('EURES') ? 'EURES' : 'Arbeitsagentur'));
+const fehlt = ['Arbeitsagentur', 'EURES'].filter((q) => orte.some((o) => (q === 'EURES') === (o.quelle === 'eures')) && !(jeQuelleAnzahl[q]?.length));
+if (fehlt.length) console.log(`\nACHTUNG: keine Anzeigen von ${fehlt.join(' und ')}. Schnittstelle prüfen (BETRIEB.md, Stellensuche).`);
+if (!roh.beantwortet || fehlt.length) process.exitCode = 1;

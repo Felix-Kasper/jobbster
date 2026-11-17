@@ -66,14 +66,9 @@ Mit eigener Domain (nach Schritt 2):
 Impressum und Support-Adresse: Repo-Variablen `SUPPORT_EMAIL`, `IMPRESSUM_NAME`, `IMPRESSUM_ANSCHRIFT`, `IMPRESSUM_GEWERBE`, `IMPRESSUM_BEHOERDE`, `IMPRESSUM_KAMMER`, `IMPRESSUM_UID`. Was fehlt, zeigt die App als „fehlt noch“.
 
 ## 5. Admin und Beta-Codes (5 min)
-1. In der App unter `app.<deine-domain>` registrieren. Code dafür: `select * from public.create_invites(1, 90, 'beta', 'Felix');` im Supabase SQL-Editor.
-2. Dann im SQL-Editor:
-```sql
-insert into public.admins (user_id) select id from auth.users where email = 'DEINE-ADRESSE';
-select * from public.create_invites(10, 30, 'beta', 'Beta November');   -- 10 Codes für 30 Tage
-select * from public.create_probe_invites(10, 'MCI');                  -- 10 Probe-Codes (7 Tage)
-```
-3. Anfragen von der Landingpage: `select email, note, created_at from public.waitlist where invited_at is null order by created_at;`
+1. In der App unter `/app/registrieren` mit einem der Beta-Codes registrieren (10 Codes liegen seit 17.11. bereit, Claude hat sie Felix geschickt).
+2. Claude die Adresse schreiben. Claude trägt sie als Admin ein (`insert into public.admins …`).
+3. Danach alles im Admin-Bereich der App: Warteliste mit „Code erzeugen“ und fertiger Mail, neue Codes, Mitglieder, Kosten, Fehler.
 
 ## 6. Gewerbe (vor dem ersten Euro)
 WKO-Gründerservice, Gewerbe „Dienstleistungen in der automatischen Datenverarbeitung und Informationstechnik“ (freies Gewerbe, online anmeldbar). Danach die Impressum-Werte in Schritt 4.3 nachtragen.
