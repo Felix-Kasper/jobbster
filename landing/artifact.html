@@ -893,7 +893,7 @@ section { position: relative; }
     fetch(ENDPUNKT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: mail, consent: true, source: 'landing', note: text.slice(0, 480) || null, website: form.website.value }) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok && j.ok, grund: j.grund }; }); })
       .then(function (r) {
-        if (r.ok) { sag('Angekommen. Wir melden uns per E-Mail, meist innerhalb eines Tages.', 'gut'); form.email.value = ''; form.text.value = ''; }
+        if (r.ok) { sag('Du stehst auf der Liste. Deinen Einladungscode schicken wir dir persönlich per E-Mail, meist innerhalb eines Tages. Mit dem Code legst du dein Konto an.', 'gut'); form.email.value = ''; form.text.value = ''; }
         else if (r.grund === 'email') sag('Bitte prüfe die E-Mail-Adresse.', 'schlecht');
         else if (r.grund === 'spaeter') sag('Gerade fragen sehr viele an. Bitte versuch es in einer Stunde noch einmal.', 'schlecht');
         else sag('Das hat nicht geklappt. Bitte versuch es später noch einmal.', 'schlecht');

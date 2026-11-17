@@ -10,6 +10,7 @@ on:
     paths:
       - 'supabase/functions/run-now/**'
       - 'supabase/functions/profil-vorschlag/**'
+      - 'supabase/functions/signup/**'
       - 'worker/lib/**'
 
 permissions:
@@ -37,3 +38,4 @@ jobs:
         run: |
           supabase functions deploy run-now --project-ref "$PROJEKT" --yes
           supabase functions deploy profil-vorschlag --project-ref "$PROJEKT" --yes
+          supabase functions deploy signup --project-ref "$PROJEKT" --yes

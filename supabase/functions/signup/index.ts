@@ -80,6 +80,13 @@ Deno.serve(async (req: Request) => {
     return antwort(200, { ok: true, gueltig_bis: null, probe: false, start: "zahlung" });
   }
 
+  // 0. Der Code für den automatischen Rauchtest (steht im öffentlichen Repo) gilt nur für Test-Adressen
+  const { data: art } = await admin.from("invites").select("note").eq("code", code).maybeSingle();
+  if (art?.note === "Rauchtest" && !email.endsWith("@jobbster.invalid")) {
+    await warte(800);
+    return antwort(403, { ok: false, grund: "code" });
+  }
+
   // 1. Code einlösen (ein einziger UPDATE, also sicher gegen gleichzeitige Anmeldungen)
   // Der Code bringt Tage und Tarif mit. Die Laufzeit beginnt jetzt, beim Einlösen.
   const { data: eingeloest, error: codeFehler } = await admin.rpc("claim_invite_v2", { p_code: code });
