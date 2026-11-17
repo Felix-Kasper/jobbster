@@ -320,7 +320,8 @@ test('Scout: fehlen Treffer, ergänzt eine kleine Websuche, ohne Abrufe und ohne
   assert.equal(web.length, 1);
   assert.match(web[0].o.system, /Bis zu 4 Suchen/);
   assert.match(web[0].o.system, /Ziel sind 4 gute Treffer/);
-  assert.equal(web[0].o.denken, false);
+  assert.equal(web[0].o.aufwand, 'low');
+  assert.notEqual(web[0].o.denken, false, 'mit Suchwerkzeug nicht ganz ohne Nachdenken');
   assert.match(web[0].o.user, /karriere\.at, StepStone, LinkedIn Jobs/);
   assert.match(web[0].o.user, /SCHON BEKANNT[^]*Tirolwerk GmbH/, 'Quellen-Treffer nicht doppelt');
   assert.equal(r.werkzeug, 'quellen+web');

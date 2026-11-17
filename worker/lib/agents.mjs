@@ -62,7 +62,8 @@ export async function scout({ claude, profil, bekannt = [], signale = '', cfg = 
   if (!ergaenzen && !reserve) return q;
 
   // Ergänzung: wenige Suchen, keine Abrufe, kein Nachdenken. Reserve (keine Quelle deckt die Orte ab): volle Websuche.
-  const cWeb = ergaenzen ? { ...c, treffer: fehlend, suchen: c.ergaenzungSuchen, abrufe: 0, webDenken: false, ergaenzung: true } : c;
+  // Mit Suchwerkzeug nicht ganz ohne Nachdenken: Am 17.11. lieferte Haiku so nur ungültige Suchanfragen. Wenig Aufwand reicht.
+  const cWeb = ergaenzen ? { ...c, treffer: fehlend, suchen: c.ergaenzungSuchen, abrufe: 0, webAufwand: 'low', ergaenzung: true } : c;
   let web;
   try {
     web = await scoutAusWebsuche({ claude, profil, profilT, bekannt: [...bekannt, ...q.leads.map((l) => l.company)], signale, c: cWeb });
@@ -163,7 +164,7 @@ async function scoutAusWebsuche({ claude, profil, profilT, bekannt, signale, c }
   ].filter(Boolean).join('\n\n');
 
   const suche = await claude.zugMitWerkzeugen(
-    { model: c.modellScout, system: P.scoutSuche({ heute: c.heute, treffer: c.treffer, suchen: c.suchen, abrufe: c.abrufe }), user, ...(c.webDenken === false ? { denken: false, maxTokens: 6000 } : {}) },
+    { model: c.modellScout, system: P.scoutSuche({ heute: c.heute, treffer: c.treffer, suchen: c.suchen, abrufe: c.abrufe }), user, ...(c.webAufwand ? { aufwand: c.webAufwand, maxTokens: 8000 } : {}) },
     werkzeuge(c.variante, { suchen: c.suchen, abrufe: c.abrufe, ...ortFuerSuche(profil) }),
   );
   if (suche.stop !== 'end_turn') hinweise.push(`Suche endete mit ${suche.stop}`);
@@ -179,7 +180,7 @@ async function scoutAusWebsuche({ claude, profil, profilT, bekannt, signale, c }
       system: P.scoutBewertung({ heute: c.heute }),
       user: `PROFIL\n${profilT}\n\nTREFFERLISTE\n${suche.text}`,
       format: P.LEADS_SCHEMA,
-      ...(c.webDenken === false ? { denken: false } : {}),
+      ...(c.webAufwand ? { denken: false } : {}),
     });
     const gelesen = leseJson(bewertung.text);
     if (gelesen) daten = gelesen;

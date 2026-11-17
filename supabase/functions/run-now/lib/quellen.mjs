@@ -52,6 +52,9 @@ export function klartext(/** @type {unknown} */ s) {
     .replace(/[ \t]+/g, ' ').replace(/\s*\n\s*/g, '\n').trim();
 }
 
+/** Titel und Namen in einer Zeile: Manche Anzeigen hängen „Vollzeit“ mit Zeilenumbruch an. */
+const einzeilig = (/** @type {unknown} */ s) => klartext(s).replace(/\s+/g, ' ').trim();
+
 const MAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/;
 const tag = (/** @type {number | string | null | undefined} */ t) => {
   const d = new Date(t ?? NaN);
@@ -251,7 +254,7 @@ export async function baSuche(holen, { was, wo, rang, angebotsart = 1, stufe = 1
     const adresse = s.stellenlokationen?.[0]?.adresse ?? {};
     const land = norm(adresse.land);
     return {
-      quelle: 'Arbeitsagentur', id: String(s.referenznummer), titel: klartext(s.stellenangebotsTitel), firma: klartext(s.firma) || null,
+      quelle: 'Arbeitsagentur', id: String(s.referenznummer), titel: einzeilig(s.stellenangebotsTitel), firma: klartext(s.firma) || null,
       ort: klartext(adresse.ort) || null, land: /** @type {Land} */ (land.includes('sterreich') ? 'AT' : land.includes('schweiz') ? 'CH' : landesweit && norm(wo).includes('sterreich') ? 'AT' : 'DE'),
       datum: tag(s.datumErsteVeroeffentlichung ?? s.veroeffentlichungszeitraum?.von),
       url: `https://www.arbeitsagentur.de/jobsuche/jobdetail/${encodeURIComponent(s.referenznummer)}`,
@@ -308,7 +311,7 @@ export async function euresSuche(holen, { was, nuts, nah = [], rang, land = 'AT'
     const regionen = Object.values(j.locationMap ?? {}).flat().filter(Boolean).map((r) => String(r).toLowerCase());
     const region = regionen.find((r) => nah.includes(r)) ?? regionen[0];
     return {
-      quelle: land === 'AT' ? 'EURES (AMS)' : 'EURES', id: String(j.id), titel: klartext(j.title), firma: firma && !/^siehe beschreibung$/i.test(firma) ? firma : null,
+      quelle: land === 'AT' ? 'EURES (AMS)' : 'EURES', id: String(j.id), titel: einzeilig(j.title), firma: firma && !/^siehe beschreibung$/i.test(firma) ? firma : null,
       ort: regionName(region) ? `Region ${regionName(region)}` : null, land: /** @type {Land} */ (land), datum: tag(j.creationDate),
       url: `https://europa.eu/eures/portal/jv-se/jv-details/${encodeURIComponent(j.id)}?lang=de`,
       beschreibung: klartext(j.translations?.de?.description ?? j.description), mail: null, bewerbung: '', ortRang: rang,

@@ -145,7 +145,10 @@ export function createClaude({ post, log = () => {}, wartenMaxS = 90 }) {
       gesamtUsd += kosten(model, u);
       for (const b of res.content || []) {
         if (b.type === 'text') texte.push(b.text);
-        if (b.type === 'server_tool_use' && b.name === 'web_search' && b.input?.query) suchbegriffe.push(String(b.input.query).slice(0, 120));
+        if (b.type === 'server_tool_use' && b.name === 'web_search') {
+          if (b.input?.query) suchbegriffe.push(String(b.input.query).slice(0, 120));
+          else werkzeugFehler.push(`Suche ohne Begriff (${Object.keys(b.input ?? {}).join(',') || 'leer'})`);
+        }
         const c = b.content;
         if (c && !Array.isArray(c) && typeof c === 'object' && /_error$/.test(c.type || '')) werkzeugFehler.push(c.error_code);
       }
