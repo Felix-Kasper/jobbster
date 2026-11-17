@@ -125,7 +125,9 @@ const RAUCHTEST_CODE = 'ZS-FCA8-93EE-8FE5-206E';
       await seite.getByLabel('E-Mail-Adresse').fill(email);
       await seite.getByLabel('Passwort').fill(pw);
       await seite.getByRole('button', { name: 'Anmelden' }).click();
-      await seite.waitForURL(/\/app\/(treffer|start)$/, { timeout: 20000 });
+      // Nach dem Anmelden geht es dorthin zurück, wo man war (hier: Konto)
+      await seite.waitForURL(/\/app\/(treffer|start|konto)$/, { timeout: 20000 });
+      await seite.getByRole("button", { name: "Abmelden" }).first().waitFor({ timeout: 10000 });
     });
   } finally {
     if (angelegt) {
