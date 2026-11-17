@@ -372,5 +372,7 @@ export async function vorbereitung({ claude, profil, lead, stufe = 'interview1',
   sauber.sources = (sauber.sources || []).filter((s) => /^https?:\/\//i.test(s.url || ''));
   sauber.generated_at = new Date().toISOString();
 
+  const teil = (name, z) => (z ? `${name} ${z.usd.toFixed(4)} $ (${z.tokensEin} ein, ${z.tokensAus} aus, davon ${z.tokensDenken || 0} Nachdenken${z.suchen ? `, ${z.suchen} Suchen, ${z.abrufe} Abrufe` : ''})` : null);
+  hinweise.push(['Kosten:', teil('Recherche', recherche), teil('Text', text)].filter(Boolean).join(' '));
   return { prep: sauber, hinweise, nutzung: summe(recherche, text), model: c.modellText };
 }
