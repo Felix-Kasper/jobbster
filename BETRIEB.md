@@ -46,5 +46,8 @@ Die tägliche Suche holt echte Anzeigen aus zwei öffentlichen Schnittstellen: J
 - **Findet ein Nutzer nichts?** GitHub → Actions → „Quellen-Probe“ → Run workflow, mit seinen Suchbegriffen und Orten. Der Lauf zeigt, was die Schnittstellen liefern und ob die Links gehen. Er kostet nichts.
 - **Fällt eine Schnittstelle aus**, steht im Protokoll des Workers „Quelle: n von m Anfragen ohne Ergebnis“. Liefert keine Quelle mehr etwas für die Orte eines Nutzers, springt die Websuche als Reserve ein (rund 0,30 $ pro Lauf, findet wenig). Dann zuerst die Probe starten.
 - **Orte außerhalb von Deutschland und Österreich** (zum Beispiel Zürich) laufen immer über die Websuche.
-- Österreich ist dünner abgedeckt als Deutschland: EURES enthält nur Stellen, die dem AMS gemeldet sind.
-- Treffer unter 50 Punkten werden nicht gezeigt (`mindestMatch` in `worker/lib/agents.mjs`). Lieber 7 gute als 10 mit Lückenfüllern.
+- Österreich ist dünner abgedeckt als Deutschland: EURES enthält nur Stellen, die dem AMS gemeldet sind. Deshalb sucht Jobbster dort zusätzlich im Anzeigentext und über die Auslandssuche der Arbeitsagentur. Schweiz: über EURES.
+- Die Liste wird jeden Tag voll (Entscheidung 16.11.): erst was passt, dann ähnliche und anspruchsvollere Rollen, Leichteres nur als letzte Reserve. Die Begründung beginnt dann mit „Ähnliche Rolle:“, „Anspruchsvoller:“ oder „Leichter als das Profil:“.
+- Suchbegriffe: Kernrollen aus dem Profil, dazu verwandte Rollen, die die KI aus Lebenslauf und perfektem Job ableitet. Beides steht im Protokoll des Workers.
+- Fehlen nach den Quellen 2 oder mehr Treffer, sucht eine kleine Websuche (4 Suchen) auf karriere.at, StepStone, LinkedIn Jobs, Indeed, XING und Karriereseiten. LinkedIn-Beiträge und alles hinter einer Anmeldung sind nicht erreichbar.
+- Abschalten oder einstellen: `STANDARD` in `worker/lib/agents.mjs` (`webErgaenzung`, `ergaenzungAb`, `ergaenzungSuchen`, `mindestMatch`).

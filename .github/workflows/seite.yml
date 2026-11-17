@@ -33,6 +33,15 @@ jobs:
           if [ -n "$DOMAIN" ]; then echo "BASIS=/" >> "$GITHUB_ENV"; else echo "BASIS=/${GITHUB_REPOSITORY#*/}/" >> "$GITHUB_ENV"; fi
       - name: App bauen
         working-directory: app
+        # Impressum und Support-Adresse als Repo-Variablen (Settings → Secrets and variables → Actions → Variables). Fehlt eine, zeigt die App „fehlt noch“.
+        env:
+          VITE_SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}
+          VITE_IMPRESSUM_NAME: ${{ vars.IMPRESSUM_NAME }}
+          VITE_IMPRESSUM_ANSCHRIFT: ${{ vars.IMPRESSUM_ANSCHRIFT }}
+          VITE_IMPRESSUM_GEWERBE: ${{ vars.IMPRESSUM_GEWERBE }}
+          VITE_IMPRESSUM_BEHOERDE: ${{ vars.IMPRESSUM_BEHOERDE }}
+          VITE_IMPRESSUM_KAMMER: ${{ vars.IMPRESSUM_KAMMER }}
+          VITE_IMPRESSUM_UID: ${{ vars.IMPRESSUM_UID }}
         run: |
           npm ci
           VITE_BASE="${BASIS}app/" npm run build

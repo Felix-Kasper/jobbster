@@ -21,7 +21,7 @@ Stand 13.11.2026, 12 Uhr. Was fertig ist und was Felix tun muss, genau in dieser
 |---|---|---|
 | Fr 13.11. | Schritt 1: Claude-Schlüssel eintragen | Felix |
 | Sa 14.11. | Sofort-Entwurf einspielen, Messlauf mit echtem Lebenslauf: echte Treffer, echte Entwürfe, Kosten pro Nutzer | Claude |
-| So 15.11. | Schritte 2 bis 5: Domain, GitHub, Hosting, Admin | Felix, ca. 1 Stunde |
+| Mi 18.11. | Schritte 2, 4, 5: Domain, Pages einschalten, Admin | Felix, ca. 20 Minuten |
 | Mo 16.11. | Erste Beta-Nutzer mit Codes (gratis), Fehler aus echter Nutzung beheben | beide |
 | Fr 20.11. | Schritt 6: Gewerbe angemeldet | Felix |
 | Di 24.11. | Schritt 7: Stripe im Testmodus, Testkauf | Felix, dann Claude prüft |
@@ -45,28 +45,25 @@ alter table public.runs drop constraint if exists runs_agent_check;
 alter table public.runs add constraint runs_agent_check check (agent in ('scout', 'writer', 'coach', 'profil'));
 ```
 
-## 2. Name und Domain (20 min)
-1. Marke prüfen: „Jobbster“ und das ähnliche „Jobster“ (gab es früher als US-Jobportal) im österreichischen Markenregister (see.ip.gv.at) und bei der EU (euipo.europa.eu, eSearch plus) suchen, Klassen 9, 35 und 42. Gibt es dort einen Treffer für Software oder Personalvermittlung, Claude Bescheid geben.
-2. Domain kaufen. Reihenfolge der Wünsche: `jobbster.com`, `jobbster.app`, `jobbster.at`, `jobbster.io`. Die Endungen `.app`, `.io` und `.com` gibt es direkt bei Cloudflare (Domain Registration). Eine `.at` gibt es bei einem österreichischen Anbieter, danach im Anbieter die Nameserver auf Cloudflare stellen.
-3. Claude die gekaufte Domain schreiben.
+## 2. Name und Domain (10 min)
+1. Marke: Felix hat am 16.11. eine eingetragene Wortmarke „jobbster“ in Schweden gefunden (PRV, 2022, Klassen 9 und 35). Ob der Name bleibt, entscheidet Felix (kein Rechtsrat von Claude). Der Name steht im Code nur in `app/src/lib/config.ts` (`MARKE`) und in der Landingpage.
+2. Domain kaufen. Stand 17.11. (RDAP-Abfrage): `jobbster.com` und `jobbster.de` vergeben, **frei: `jobbster.app`**, `jobbster.io`, `jobbster.ai`, `jobbster.co`, `jobbster.net`. Empfehlung: `jobbster.app` (erzwingt HTTPS, passt zur App). Kaufen zum Beispiel bei Cloudflare (Domain Registration) oder INWX.
+3. Claude die gekaufte Domain schreiben. Claude richtet den Rest ein und sagt, welche zwei DNS-Einträge beim Anbieter nötig sind.
 
-## 3. GitHub (15 min)
-1. github.com → New repository → Name `jobbster`, **Private**.
-2. Zip entpacken. GitHub Desktop → File → Add local repository → den entpackten Ordner wählen → „create a repository“ → Publish repository, „Keep this code private“ angehakt.
-3. Im Repo: Settings → Secrets and variables → Actions → New repository secret:
-   - `ANTHROPIC_API_KEY`: der Schlüssel aus Schritt 1
-   - `SUPABASE_SERVICE_KEY`: Supabase → Project Settings → API Keys → Secret key
-4. Gleiche Seite, Reiter Variables → New repository variable: `SUPABASE_URL` = `https://pekfnuywzouakdpehouc.supabase.co`
-5. Supabase → Account (Bild rechts oben) → Access Tokens → Generate new token, Name `github`. Als drittes Secret im Repo eintragen: `SUPABASE_ACCESS_TOKEN`.
-6. Reiter Actions: „Prüfen“ muss grün sein. Dann „Funktionen einspielen“ → Run workflow: Das schaltet den Sofort-Entwurf und den Vorschlag aus „Perfekter Job“ frei. Dann „Worker“ → Run workflow. Ab jetzt sucht der Worker jeden Morgen um 5:30 Uhr.
+## 3. GitHub (erledigt am 14.11.)
+Repo `Felix-Kasper/jobbster` mit Secrets `ANTHROPIC_API_KEY`, `SUPABASE_SERVICE_KEY`, `SUPABASE_ACCESS_TOKEN` und Variable `SUPABASE_URL`. Claude lädt Änderungen selbst hoch. Abläufe: Prüfen, Worker (täglich 5:30), Funktionen einspielen, Seite veröffentlichen, Quellen-Probe.
 
-## 4. Hosting (20 min)
-1. Cloudflare → Workers & Pages → Create → Pages → Connect to Git → Repo `jobbster`.
-2. Einstellungen: Root directory `app`, Build command `npm ci && npm run build`, Output `dist`.
-3. Environment variables: `VITE_SUPPORT_EMAIL` (deine Support-Adresse), dazu die Impressum-Werte `VITE_IMPRESSUM_NAME`, `VITE_IMPRESSUM_ANSCHRIFT`, `VITE_IMPRESSUM_GEWERBE`, `VITE_IMPRESSUM_BEHOERDE`, `VITE_IMPRESSUM_KAMMER`. Was du noch nicht hast, leer lassen: Die Seite zeigt dann „fehlt noch“.
-4. Custom domain: `app.<deine-domain>`.
-5. Zweites Pages-Projekt für die Landingpage: gleiches Repo, Root directory `landing`, kein Build-Befehl, Output `.`. Custom domain: `<deine-domain>`.
-6. Supabase → Authentication → URL Configuration → Site URL: `https://app.<deine-domain>`.
+## 4. Hosting über GitHub Pages (1 Klick)
+Der Ablauf „Seite veröffentlichen“ baut bei jeder Änderung Landingpage (`/`) und App (`/app/`) und legt beides auf den Zweig `gh-pages`. Einmalig einschalten:
+1. Repo → Settings → Pages → Source „Deploy from a branch“ → Branch `gh-pages`, Ordner `/ (root)` → Save.
+2. Nach etwa einer Minute online unter `https://felix-kasper.github.io/jobbster/` (App: `/jobbster/app/`).
+
+Mit eigener Domain (nach Schritt 2):
+1. Repo → Settings → Secrets and variables → Actions → Variables → `SEITE_DOMAIN` = `jobbster.app`.
+2. Beim Domain-Anbieter die DNS-Einträge für GitHub Pages setzen (Claude nennt sie), dann in Settings → Pages „Enforce HTTPS“.
+3. Supabase → Authentication → URL Configuration → Site URL: `https://jobbster.app/app/`. Stripe-Secret `APP_URL` = `https://jobbster.app/app`.
+
+Impressum und Support-Adresse: Repo-Variablen `SUPPORT_EMAIL`, `IMPRESSUM_NAME`, `IMPRESSUM_ANSCHRIFT`, `IMPRESSUM_GEWERBE`, `IMPRESSUM_BEHOERDE`, `IMPRESSUM_KAMMER`, `IMPRESSUM_UID`. Was fehlt, zeigt die App als „fehlt noch“.
 
 ## 5. Admin und Beta-Codes (5 min)
 1. In der App unter `app.<deine-domain>` registrieren. Code dafür: `select * from public.create_invites(1, 90, 'beta', 'Felix');` im Supabase SQL-Editor.
@@ -97,15 +94,17 @@ Mit prüfen lassen: Die Stellen kommen aus zwei öffentlichen Schnittstellen ohn
 
 ## Kosten im Blick
 - Tageslimit für alle zusammen: `tageslimit_usd` (jetzt 3 $). Ist es erreicht, warten offene Läufe bis zum nächsten Tag. Nach dem Messlauf passend zur Nutzerzahl erhöhen (Befehle in `BETRIEB.md`).
-- Gemessen am 16.11. (Test-Konto, Controlling in Innsbruck und München):
+- Gemessen am 16. und 17.11. (Test-Konto, Controlling in Innsbruck und München, 12 pro Tag):
 
 | Was | Kosten | Dauer |
 |---|---|---|
-| Tägliche Suche, 8 bis 10 neue Treffer aus rund 150 echten Anzeigen | 0,006 $ | 40 s |
+| Tägliche Suche aus den Quellen, 9 bis 10 neue Treffer aus rund 250 echten Anzeigen | 0,012 $ | 60 s |
+| Dazu, wenn Treffer fehlen: kleine Websuche (karriere.at, StepStone, LinkedIn Jobs …) | bis 0,05 $ | 30 s |
 | Ein Entwurf (Recherche zur Firma und Anschreiben) | 0,034 bis 0,047 $ | 20 s |
+| Eine Gesprächsvorbereitung (Recherche und Leitfaden) | 0,09 $ | 50 s |
 
-- Pro Nutzer und Monat: Suche rund 0,20 $. Entwürfe je nach Fleiß: 5 am Tag rund 6 $, das Maximum von 12 am Tag rund 15 $. Eine voll ausgenutzte Probewoche kostet bis zu 3,50 $.
-- Vorher (Websuche, mit Nachdenken): Suche 0,23 bis 0,44 $ für 1 bis 2 Treffer, Entwurf 0,07 bis 0,09 $.
+- Pro Nutzer und Monat: Suche 0,40 bis 1,80 $. Entwürfe je nach Fleiß: 3 am Tag rund 4 $, das Maximum von 12 am Tag rund 15 $. Vorbereitung höchstens 2 pro Woche, unter 1 $. Typisch also 5 bis 7 $, im Extremfall rund 18 $.
+- Vorher (Websuche, mit Nachdenken): Suche 0,23 bis 0,44 $ für 1 bis 2 Treffer, Entwurf 0,07 bis 0,09 $, Vorbereitung 0,16 $.
 
 ## Bewusst noch nicht drin
 - **Versand aus dem Postfach:** Entscheidung 12.11.: Entwurf, du sendest. Die App öffnet Mail oder Portal mit fertigem Text.
