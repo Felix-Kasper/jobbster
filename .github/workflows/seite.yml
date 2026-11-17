@@ -56,3 +56,15 @@ jobs:
           git add -A
           git commit -qm "Seite aus ${GITHUB_SHA::7}"
           git push -qf "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+      - name: Erreichbarkeit prüfen
+        continue-on-error: true
+        run: |
+          if [ -n "$DOMAIN" ]; then ZIEL="https://$DOMAIN"; else ZIEL="https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}"; fi
+          for i in $(seq 1 18); do
+            A=$(curl -s -o /dev/null -w "%{http_code}" "$ZIEL/"); B=$(curl -s -o /dev/null -w "%{http_code}" "$ZIEL/app/anmelden")
+            echo "Versuch $i: Landing $A, App $B"
+            [ "$A" = 200 ] && [ "$B" != 000 ] && grep -q . <(curl -s "$ZIEL/" | grep -o "Jobbster" | head -1) && { echo "ONLINE: $ZIEL/"; exit 0; }
+            sleep 10
+          done
+          echo "NICHT ERREICHBAR: GitHub Pages ist vermutlich noch nicht eingeschaltet (Settings → Pages → Branch gh-pages)."
+          exit 1
