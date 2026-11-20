@@ -1,0 +1,26 @@
+name: Online-Probe
+
+# Diagnose von Hand: Sind diese Anzeigen noch online? Schreibt nichts, nutzt keine KI.
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: 'Links, mit Komma getrennt'
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node worker/tools/online-probe.mjs "$URLS"
+        env:
+          URLS: ${{ inputs.urls }}
