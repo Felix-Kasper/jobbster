@@ -5,7 +5,8 @@
  * Läuft in GitHub Actions (nach Zeitplan und auf Anstoß). Schlüssel nur als Secrets.
  *
  *   node worker/worker.mjs          offene Aufträge abarbeiten
- *   node worker/worker.mjs --plan   vorher für alle aktiven Nutzer den fälligen Scout-Lauf einreihen
+ *   node worker/worker.mjs --plan   vorher aufräumen (Anzeigen nicht mehr online) und für alle aktiven Nutzer den fälligen Scout-Lauf einreihen
+ *   node worker/worker.mjs --aufraeumen   nur aufräumen, dann die Warteschlange
  *
  * Umgebung: SUPABASE_URL, SUPABASE_SERVICE_KEY, ANTHROPIC_API_KEY
  * Optional: SCOUT_VARIANTE (filter|einfach), SCOUT_MODELL (zum Testen), SCOUT_QUELLEN=aus (nur Websuche),
@@ -17,6 +18,7 @@ import http from 'node:http';
 import https from 'node:https';
 import { pathToFileURL } from 'node:url';
 import { createClaude, schluesselOk, verdecke } from './lib/claude.mjs';
+import { entscheide, pruefeAlle } from './lib/online.mjs';
 import { scout, entwurf, vorbereitung } from './lib/agents.mjs';
 
 const kurzId = (id) => String(id || '').slice(0, 8);
@@ -61,6 +63,34 @@ function datenbank(url, key) {
     if (!res.ok) throw new Error(`Datenbank ${method} ${pfad.split('?')[0]}: ${res.status} ${text.slice(0, 200)}`);
     return text ? JSON.parse(text) : null;
   };
+}
+
+/**
+ * Offene Treffer (neu, entwurf) prüfen, die heute noch nicht geprüft wurden, älteste Prüfung zuerst.
+ * Kostet keine KI. Gelöscht wird nur bei eindeutigem Befund (siehe worker/lib/online.mjs).
+ */
+export async function aufraeumen({ db, holen, max = 600, jetzt = new Date() }) {
+  const grenze = new Date(jetzt.getTime() - 20 * 3_600_000).toISOString();
+  const offen = await db('GET', `job_leads?status=in.(neu,entwurf)&or=(online_geprueft_at.is.null,online_geprueft_at.lt.${grenze})&select=id,status,url,deadline,posted_at,created_at&order=online_geprueft_at.asc.nullsfirst&limit=${max}`);
+  if (!offen.length) {
+    console.log('Aufräumen: nichts zu prüfen.');
+    return { geprueft: 0, entfernt: 0 };
+  }
+  const t0 = Date.now();
+  const geprueft = await pruefeAlle(holen, offen);
+  const zaehler = { online: 0, weg: 0, unklar: 0 };
+  let entfernt = 0;
+  for (const t of geprueft) {
+    zaehler[t.befund.status]++;
+    const e = entscheide(t, t.befund, jetzt);
+    await db('PATCH', `job_leads?id=eq.${t.id}&status=in.(neu,entwurf)`, e.aenderung, 'return=minimal');
+    if (e.warum) {
+      entfernt++;
+      console.log(`  raus: ${e.warum} · ${t.befund.grund} · ${String(t.url).slice(0, 90)}`);
+    }
+  }
+  console.log(`Aufräumen: ${offen.length} offene Treffer geprüft (${zaehler.online} online, ${zaehler.weg} weg, ${zaehler.unklar} nicht prüfbar), ${entfernt} entfernt, ${Math.round((Date.now() - t0) / 1000)} s.`);
+  return { geprueft: offen.length, entfernt, ...zaehler };
 }
 
 function signaleText(leads) {
@@ -117,6 +147,15 @@ export async function main(env = process.env, argv = process.argv.slice(2), { ho
   // Hängengebliebene Aufträge freigeben (zählen dann nicht gegen die Grenze des Nutzers)
   const alt = new Date(Date.now() - 40 * 60_000).toISOString();
   await db('PATCH', `queue?status=eq.laeuft&started_at=lt.${alt}`, { status: 'fehler', error: 'Abgebrochen: Zeitüberschreitung', finished_at: jetzt() });
+
+  // Jeden Morgen zuerst aufräumen: offene Treffer, deren Anzeige nicht mehr online ist, fliegen raus
+  if (argv.includes('--plan') || argv.includes('--aufraeumen')) {
+    try {
+      await aufraeumen({ db, holen, max: Number(env.AUFRAEUMEN_MAX || 600) });
+    } catch (e) {
+      console.log(`Aufräumen fehlgeschlagen: ${verdecke(e.message)}`); // die Suche läuft trotzdem
+    }
+  }
 
   // Fällige Scout-Läufe einreihen (Zeitplan)
   if (argv.includes('--plan')) {

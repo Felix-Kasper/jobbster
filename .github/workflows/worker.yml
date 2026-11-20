@@ -7,6 +7,10 @@ on:
         description: 'Suche für alle aktiven Nutzer jetzt planen'
         type: boolean
         default: false
+      aufraeumen:
+        description: 'Nur prüfen, ob offene Treffer noch online sind (ohne Suche)'
+        type: boolean
+        default: false
       variante:
         description: 'Suchart zum Testen (leer = Standard)'
         type: string
@@ -49,7 +53,7 @@ jobs:
           node --version
           IFS=, read -r TEXT_MODELL TEXT_AUFWAND TEXT_DENKEN <<< "$TEXT_TEST"
           export TEXT_MODELL TEXT_AUFWAND TEXT_DENKEN
-          node worker/worker.mjs ${{ (github.event.schedule == '30 4 * * *' || inputs.plan) && '--plan' || '' }}
+          node worker/worker.mjs ${{ (github.event.schedule == '30 4 * * *' || inputs.plan) && '--plan' || (inputs.aufraeumen && '--aufraeumen' || '') }}
         env:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}

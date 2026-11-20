@@ -44,10 +44,18 @@ function filter(rows, params) {
   let r = rows;
   for (const [k, v] of params) {
     if (['select', 'order', 'limit', 'on_conflict'].includes(k)) continue;
+    if (k === 'or') {
+      // or=(feld.op.wert,feld.op.wert): eine der Bedingungen genügt
+      const teile = v.replace(/^\(|\)$/g, '').split(',').map((t) => { const [f, ...o] = t.split('.'); return [f, o.join('.')]; });
+      r = r.filter((row) => teile.some(([f, bed]) => filter([row], new URLSearchParams([[f, bed]])).length > 0));
+      continue;
+    }
     const [op, ...rest] = v.split('.');
     const wert = rest.join('.');
     r = r.filter((row) => {
       const x = row[k];
+      if (op === 'in') return wert.replace(/^\(|\)$/g, '').split(',').includes(String(x));
+      if (op === 'is' && wert === 'null') return x == null;
       if (op === 'eq') return String(x) === wert;
       if (op === 'neq') return String(x) !== wert;
       if (op === 'lt') return x != null && String(x) < wert;
@@ -344,6 +352,44 @@ try {
     assert.ok(web.every((x) => x.effort === 'low'), 'wenig Aufwand');
     assert.equal(lauf.result_count, 4);
     assert.ok(DB.job_leads.findIndex((l) => l.company === 'Murwerk AG') >= 0);
+  });
+
+  // 9. Aufräumen: Anzeigen, die nicht mehr online sind, fliegen raus (ohne KI)
+  DB = frisch();
+  DB.queue = [];
+  const ba = (ref) => `https://www.arbeitsagentur.de/jobsuche/jobdetail/${ref}`;
+  DB.job_leads.push(
+    { id: 'weg-neu', user_id: A, status: 'neu', url: ba('WEG-1-S'), created_at: frueher(60) },
+    { id: 'weg-entwurf', user_id: A, status: 'entwurf', url: ba('WEG-2-S'), cover_letter_md: 'Text', created_at: frueher(60) },
+    { id: 'online', user_id: A, status: 'neu', url: ba('DA-1-S'), created_at: frueher(60) },
+    { id: 'frist', user_id: A, status: 'neu', url: ba('DA-2-S'), deadline: '2020-01-31', created_at: frueher(60) },
+    { id: 'beworben', user_id: A, status: 'beworben', url: ba('WEG-3-S'), created_at: frueher(60) },
+    { id: 'heute-geprueft', user_id: A, status: 'neu', url: ba('WEG-4-S'), online_geprueft_at: new Date().toISOString(), created_at: frueher(60) },
+  );
+  const abgefragt = [];
+  const baAttrappe = async (url) => {
+    abgefragt.push(url);
+    const ref = atob(decodeURIComponent(url.split('/').pop()));
+    return new Response('{}', { status: ref.startsWith('WEG') ? 404 : 200 });
+  };
+  await main(env, ['--aufraeumen'], { holen: baAttrappe });
+  const lead = (id) => DB.job_leads.find((l) => l.id === id);
+  pruefe('Aufräumen: nicht mehr online → neu verschwindet, Entwurf kommt ins Archiv, beide mit Grund', () => {
+    assert.equal(lead('weg-neu').status, 'geloescht');
+    assert.equal(lead('weg-entwurf').status, 'verworfen');
+    assert.match(lead('weg-neu').archive_reason, /^Anzeige nicht mehr online, geprüft \d\d\.\d\d\.$/);
+  });
+  pruefe('Aufräumen: abgelaufene Frist fliegt raus, online bleibt, alles bekommt einen Prüfzeitpunkt', () => {
+    assert.equal(lead('frist').status, 'geloescht');
+    assert.match(lead('frist').archive_reason, /^Bewerbungsfrist vorbei \(2020-01-31\)/);
+    assert.equal(lead('online').status, 'neu');
+    assert.ok(lead('online').online_geprueft_at);
+  });
+  pruefe('Aufräumen: Beworbenes und heute schon Geprüftes wird nicht angefasst, keine KI', () => {
+    assert.equal(lead('beworben').status, 'beworben');
+    assert.equal(lead('heute-geprueft').status, 'neu');
+    assert.ok(!abgefragt.some((u) => /V0VHLTMtUw|V0VHLTQtUw/.test(u)), 'WEG-3 und WEG-4 nicht abgefragt');
+    assert.equal(DB.runs.length, 0);
   });
 
   still(`\n${bestanden} Prüfungen bestanden.`);

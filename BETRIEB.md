@@ -59,3 +59,11 @@ Die tägliche Suche holt echte Anzeigen aus zwei öffentlichen Schnittstellen: J
 - Suchbegriffe: Kernrollen aus dem Profil, dazu verwandte Rollen, die die KI aus Lebenslauf und perfektem Job ableitet. Beides steht im Protokoll des Workers.
 - Fehlen nach den Quellen 2 oder mehr Treffer, sucht eine kleine Websuche (4 Suchen) auf karriere.at, StepStone, LinkedIn Jobs, Indeed, XING und Karriereseiten. LinkedIn-Beiträge und alles hinter einer Anmeldung sind nicht erreichbar.
 - Abschalten oder einstellen: `STANDARD` in `worker/lib/agents.mjs` (`webErgaenzung`, `ergaenzungAb`, `ergaenzungSuchen`, `mindestMatch`).
+
+## Aufräumen: Anzeigen, die nicht mehr online sind
+Jeden Morgen vor der Suche prüft der Worker alle offenen Treffer (neu und Entwurf), höchstens 600 pro Lauf, jeden höchstens einmal am Tag. Kostet keine KI.
+- **Arbeitsagentur und EURES:** Die Schnittstelle sagt eindeutig, ob es die Anzeige noch gibt.
+- **Andere Seiten:** weg bei 404 oder 410, oder wenn die Seite ausdrücklich sagt, dass die Stelle nicht mehr verfügbar oder besetzt ist. Viele Jobbörsen sperren solche Abrufe (403). Diese Anzeigen fliegen erst raus, wenn sie über 6 Wochen alt sind.
+- **Frist vorbei:** fliegt raus, egal was die Seite sagt.
+- Neue Treffer verschwinden ganz (`geloescht`), Entwürfe kommen ins Archiv (`verworfen`), damit das Anschreiben nicht verloren ist. Der Grund steht in `archive_reason`, zum Beispiel „Anzeige nicht mehr online, geprüft 21.11.“. Beworbene Stellen und alles danach fasst der Worker nie an.
+- Von Hand: GitHub → Actions → Worker → Run workflow → Haken „Nur prüfen, ob offene Treffer noch online sind“. Einzelne Links prüfen: Actions → Online-Probe.

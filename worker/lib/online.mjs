@@ -114,3 +114,29 @@ export async function pruefeAlle(holen, anzeigen, { gleichzeitig = 6, pauseMs = 
 export function fristVorbei(/** @type {string | null | undefined} */ frist, heute = new Date().toISOString().slice(0, 10)) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(frist ?? '')) && String(frist) < heute;
 }
+
+const ALTER_TAGE = 42; // nicht prüfbare Anzeigen gelten nach 6 Wochen als abgelaufen
+const tagMonat = (/** @type {Date} */ d) => `${String(d.getUTCDate()).padStart(2, '0')}.${String(d.getUTCMonth() + 1).padStart(2, '0')}.`;
+
+/**
+ * @typedef {{ id: string, status: string, url: string | null, deadline: string | null, posted_at: string | null, created_at: string }} OffenerTreffer
+ * @typedef {{ id: string, aenderung: { status?: string, archive_reason?: string, online_geprueft_at: string }, befund: Befund | null, warum: string | null }} Entscheidung
+ */
+
+/**
+ * Was passiert mit einem offenen Treffer? Neue Treffer verschwinden ganz (geloescht), Entwürfe kommen ins Archiv
+ * (verworfen), damit die Arbeit am Anschreiben sichtbar bleibt.
+ * @param {OffenerTreffer} t @param {Befund | null} befund @param {Date} jetzt
+ * @returns {Entscheidung}
+ */
+export function entscheide(t, befund, jetzt) {
+  const heute = jetzt.toISOString().slice(0, 10);
+  const alter = (Date.parse(jetzt.toISOString()) - Date.parse(t.posted_at || t.created_at)) / 86_400_000;
+  const warum = fristVorbei(t.deadline, heute) ? `Bewerbungsfrist vorbei (${t.deadline})`
+    : befund?.status === 'weg' ? 'Anzeige nicht mehr online'
+      : befund?.status === 'unklar' && alter > ALTER_TAGE ? `Anzeige vermutlich abgelaufen (über ${ALTER_TAGE / 7} Wochen alt, Seite nicht prüfbar)`
+        : null;
+  const aenderung = { online_geprueft_at: jetzt.toISOString() };
+  if (warum) Object.assign(aenderung, { status: t.status === 'entwurf' ? 'verworfen' : 'geloescht', archive_reason: `${warum}, geprüft ${tagMonat(jetzt)}` });
+  return { id: t.id, aenderung, befund, warum };
+}
