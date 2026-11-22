@@ -45,4 +45,5 @@ jobs:
         run: |
           for d in billing stripe-webhook delete-account; do cmp supabase/functions/_shared/stripe.mjs supabase/functions/$d/stripe.mjs; done
           for f in claude agents prompts quellen; do cmp worker/lib/$f.mjs supabase/functions/run-now/lib/$f.mjs; done
+          for f in claude agents prompts quellen online betrieb; do cmp worker/lib/$f.mjs supabase/functions/takt/lib/$f.mjs; done
           for f in claude traumjob; do cmp worker/lib/$f.mjs supabase/functions/profil-vorschlag/lib/$f.mjs; done

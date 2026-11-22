@@ -11,6 +11,7 @@ on:
       - 'supabase/functions/run-now/**'
       - 'supabase/functions/profil-vorschlag/**'
       - 'supabase/functions/signup/**'
+      - 'supabase/functions/takt/**'
       - 'worker/lib/**'
 
 permissions:
@@ -34,8 +35,10 @@ jobs:
             cmp worker/lib/$f.mjs supabase/functions/run-now/lib/$f.mjs
           done
           for f in claude traumjob; do cmp worker/lib/$f.mjs supabase/functions/profil-vorschlag/lib/$f.mjs; done
+          for f in claude agents prompts quellen online betrieb; do cmp worker/lib/$f.mjs supabase/functions/takt/lib/$f.mjs; done
       - name: Einspielen
         run: |
           supabase functions deploy run-now --project-ref "$PROJEKT" --yes
           supabase functions deploy profil-vorschlag --project-ref "$PROJEKT" --yes
           supabase functions deploy signup --project-ref "$PROJEKT" --yes
+          supabase functions deploy takt --project-ref "$PROJEKT" --yes

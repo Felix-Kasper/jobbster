@@ -10,3 +10,6 @@ verify_jwt = false
 
 [functions.signup]
 verify_jwt = false
+
+[functions.takt]
+verify_jwt = false
