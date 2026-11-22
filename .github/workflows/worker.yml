@@ -26,11 +26,11 @@ on:
   repository_dispatch:
     types: [auftrag]
   schedule:
-    # Jeden Tag 04:30 UTC (05:30 in Wien im Winter): fällige Scout-Läufe für alle aktiven Nutzer
+    # Nur Reserve. Den pünktlichen Takt macht pg_cron in Supabase (Migration 013, Funktion takt).
+    # GitHub startet geplante Läufe oft Stunden zu spät; fällt Supabase aus, holt dieser Lauf trotzdem alles nach.
+    # Doppelt läuft nichts: Aufträge werden atomar übernommen, der Zeitplan reiht nur ein, was noch fehlt.
     - cron: '30 4 * * *'
-    # Übergang, bis die Datenbank den Worker selbst anstößt: tagsüber alle 30 min nach offenen Aufträgen sehen.
-    # Kostet in einem privaten Repo rund 900 der 2.000 Freiminuten pro Monat. Danach diese Zeile löschen.
-    - cron: '7,37 6-20 * * *'
+    - cron: '17 */3 * * *'
 
 concurrency:
   group: worker

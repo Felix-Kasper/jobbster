@@ -10,6 +10,22 @@ update public.app_config set value = '5' where key = 'tageslimit_usd'; -- Worker
 select date_trunc('day', created_at) tag, agent, count(*), round(sum(cost_usd), 2) usd from public.runs group by 1, 2 order by 1 desc, 2;
 ```
 
+## Zeitplan
+Den Takt macht die Datenbank (pg_cron), nicht GitHub. GitHub startet geplante Läufe oft Stunden zu spät.
+- Jede Minute: wartende Aufträge an die Funktion `takt` geben, höchstens 3 gleichzeitig. Ein Klick auf „Entwurf“ ist damit in rund 1 bis 2 Minuten fertig.
+- 4:00 bis 4:25 (Winterzeit Wien): offene Treffer prüfen, ob noch online.
+- 4:30: Suche für alle aktiven Nutzer einreihen.
+- Der Worker in GitHub läuft nur noch als Reserve (4:30 und alle 3 Stunden). Doppelt läuft nichts.
+
+```sql
+select jobname, schedule, active from cron.job;                                      -- Zeitplan
+select start_time, status, return_message from cron.job_run_details order by start_time desc limit 10;
+select id, status_code, created from net._http_response order by created desc limit 10; -- Antworten von takt (202 = ok)
+update public.app_config set value = '5' where key = 'takt_parallel';               -- mehr gleichzeitig
+select cron.alter_job((select jobid from cron.job where jobname = 'jobbster-takt'), active := false); -- Takt aus
+```
+Im Sommer laufen 4:00 und 4:30 eine Stunde später (5:00, 5:30), weil pg_cron in UTC rechnet. Wer das ändern will: `cron.alter_job` mit `schedule := '30 2 * * *'` usw.
+
 ## Grenzen pro Nutzer
 ```sql
 select value from public.app_config where key = 'grenzen';
@@ -44,7 +60,7 @@ update public.waitlist set invited_at = now() where email = 'ADRESSE';
 ```
 
 ## Fehler
-Admin-Bereich in der App zeigt die letzten 20. Protokolle der Funktionen: Supabase → Edge Functions → Logs. Worker: GitHub → Actions → Worker.
+Admin-Bereich in der App zeigt die letzten 20. Protokolle der Funktionen: Supabase → Edge Functions → Logs (die Arbeit steht unter `takt`). Reserve-Worker: GitHub → Actions → Worker.
 
 ## Stellensuche
 Jeden Morgen um 4:50 (Winterzeit) prüft der Ablauf „Quellen-Probe“ beide Schnittstellen. Liefert eine nichts, schlägt er fehl und GitHub schickt dir eine Mail.
