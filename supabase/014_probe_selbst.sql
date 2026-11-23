@@ -3,7 +3,7 @@
 -- 2. „Gratis testen“ auf der Landingpage erzeugt sofort einen Probe-Code und schickt direkt zur Anmeldung.
 --    Bremsen: höchstens app_config.probe_selbst.pro_tag Codes am Tag (Standard 30), ein Code pro Adresse,
 --    Code nur 3 Tage einlösbar, Not-Aus über probe_selbst.an = false (dann wieder nur Warteliste).
--- Eingespielt als Migration probe_selbst.
+-- Eingespielt als Migrationen probe_selbst und probe_selbst_rechte. Live getestet 23.11. (Code kommt, gleiche Adresse gleicher Code, Konto erkannt).
 
 update public.app_config
 set value = jsonb_set(value, '{entwurf}', '{"anzahl": 6, "tage": 1}'::jsonb), updated_at = now()
@@ -24,6 +24,7 @@ alter table public.waitlist add column if not exists invite_code text;
 create or replace function public.waitlist_probe(p_email text, p_source text, p_note text, p_version text)
 returns jsonb
 language plpgsql
+security definer -- liest auth.users; aufrufen darf nur die Service-Rolle (Migration probe_selbst_rechte)
 set search_path = ''
 as $$
 declare
