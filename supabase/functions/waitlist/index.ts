@@ -1,7 +1,9 @@
-// Jobbster · Warteliste der Landingpage
-// Öffentlich aufrufbar (verify_jwt aus). Schutz: Pflichtfeld Einwilligung, verstecktes Köderfeld gegen Bots,
-// Mengenbremse in der Datenbank (200 pro Stunde). Doppelte Adressen werden still ignoriert,
-// damit niemand herausfinden kann, wer schon eingetragen ist.
+// Jobbster · „Gratis testen“ auf der Landingpage
+// Trägt die Adresse in die Warteliste ein und gibt, wenn erlaubt, sofort einen Probe-Code zurück (seit 23.11.2026).
+// Die Landingpage schickt dann direkt zur Anmeldung. Öffentlich aufrufbar (verify_jwt aus).
+// Schutz: Pflichtfeld Einwilligung, verstecktes Köderfeld gegen Bots, Mengenbremsen in der Datenbank
+// (200 Einträge pro Stunde, höchstens app_config.probe_selbst.pro_tag Codes am Tag, ein Code pro Adresse,
+// Code nur 3 Tage einlösbar). Not-Aus: probe_selbst.an = false, dann nur Warteliste wie vorher.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -48,13 +50,16 @@ Deno.serve(async (req: Request) => {
   if (!url || !key) return antwort(500, { ok: false, grund: "server_konfig" });
   const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 
-  const { data, error } = await admin.rpc("join_waitlist", {
+  const { data, error } = await admin.rpc("waitlist_probe", {
     p_email: email,
     p_source: String(b.source ?? "").slice(0, 60),
     p_note: String(b.note ?? "").slice(0, 500),
     p_version: VERSION,
   });
   if (error) return antwort(500, { ok: false, grund: "server" });
-  if (data === "voll") return antwort(429, { ok: false, grund: "spaeter" });
+  const status = String((data as { status?: string } | null)?.status ?? "");
+  if (status === "voll") return antwort(429, { ok: false, grund: "spaeter" });
+  if (status === "code") return antwort(200, { ok: true, code: String((data as { code?: string }).code ?? "") });
+  if (status === "konto") return antwort(200, { ok: true, konto: true });
   return antwort(200, { ok: true });
 });

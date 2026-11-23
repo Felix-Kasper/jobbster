@@ -8,9 +8,13 @@ export default function Register() {
   const { session, reload, config } = useApp();
   const nav = useNavigate();
   const [params] = useSearchParams();
-  const [email, setEmail] = useState('');
+  // Von „Gratis testen“ auf der Landingpage: Code in der Adresse, E-Mail im Speicher des Tabs
+  const [vorher] = useState<{ email?: string; code?: string }>(() => {
+    try { return (JSON.parse(sessionStorage.getItem('jobbster-anmeldung') ?? '{}') as { email?: string; code?: string } | null) ?? {}; } catch { return {}; }
+  });
+  const [email, setEmail] = useState(vorher.email ?? '');
   const [pw, setPw] = useState('');
-  const [code, setCode] = useState(params.get('code') ?? '');
+  const [code, setCode] = useState(params.get('code') ?? vorher.code ?? '');
   const [ok, setOk] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
@@ -29,6 +33,7 @@ export default function Register() {
     setBusy(true);
     try {
       await auth.signUp({ email: email.trim(), password: pw, code: code.trim().toUpperCase(), consent: true });
+      try { sessionStorage.removeItem('jobbster-anmeldung'); } catch { /* egal */ }
       await auth.signIn(email, pw);
       await reload();
       void nav('/start', { replace: true });

@@ -13,3 +13,6 @@ verify_jwt = false
 
 [functions.takt]
 verify_jwt = false
+
+[functions.waitlist]
+verify_jwt = false

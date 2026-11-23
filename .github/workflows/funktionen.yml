@@ -12,6 +12,7 @@ on:
       - 'supabase/functions/profil-vorschlag/**'
       - 'supabase/functions/signup/**'
       - 'supabase/functions/takt/**'
+      - 'supabase/functions/waitlist/**'
       - 'worker/lib/**'
 
 permissions:
@@ -42,3 +43,4 @@ jobs:
           supabase functions deploy profil-vorschlag --project-ref "$PROJEKT" --yes
           supabase functions deploy signup --project-ref "$PROJEKT" --yes
           supabase functions deploy takt --project-ref "$PROJEKT" --yes
+          supabase functions deploy waitlist --project-ref "$PROJEKT" --yes

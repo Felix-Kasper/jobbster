@@ -62,9 +62,9 @@ function Bedingungen() {
       <h2>Was Jobbster tut</h2>
       <p>Jobbster sucht öffentlich ausgeschriebene Stellen, bewertet sie und schreibt auf Anforderung Entwürfe für Bewerbungen und Gesprächsvorbereitungen, nur mit den Angaben aus deinem Profil. Jobbster sendet keine Bewerbungen und loggt sich nirgends ein. Du prüfst jeden Entwurf und sendest selbst. Eine Einladung oder Jobbster wird nicht versprochen.</p>
       <h2>Probe und Abo</h2>
-      <p>Die ersten 7 Tage sind kostenlos und haben den vollen Umfang. Ohne Kündigung geht die Probe danach in ein Monatsabo über, das monatlich im Voraus abgerechnet wird. Den aktuellen Preis siehst du vor dem Abschluss. Du kannst jederzeit im Konto unter „Abo verwalten“ kündigen, die Kündigung gilt zum Ende des bezahlten Monats. Wer in der Probe kündigt, zahlt nichts.</p>
+      <p>Die ersten 7 Tage sind kostenlos, mit bis zu 6 Entwürfen am Tag. Ohne Kündigung geht die Probe danach in ein Monatsabo über, das monatlich im Voraus abgerechnet wird. Den aktuellen Preis siehst du vor dem Abschluss. Du kannst jederzeit im Konto unter „Abo verwalten“ kündigen, die Kündigung gilt zum Ende des bezahlten Monats. Wer in der Probe kündigt, zahlt nichts.</p>
       <h2>Grenzen</h2>
-      <p>Ein automatischer Suchlauf pro Tag mit so vielen Treffern wie im Profil eingestellt (1 bis 12), dazu ein Suchlauf von Hand. Pro Tag bis zu 12 Entwürfe, pro Woche bis zu 2 Gesprächsvorbereitungen. Bei Missbrauch oder Störungen kann Jobbster Läufe pausieren.</p>
+      <p>Ein automatischer Suchlauf pro Tag mit so vielen Treffern wie im Profil eingestellt (1 bis 12), dazu ein Suchlauf von Hand. Pro Tag bis zu 12 Entwürfe (in der Gratis-Probe bis zu 6), pro Woche bis zu 2 Gesprächsvorbereitungen. Bei Missbrauch oder Störungen kann Jobbster Läufe pausieren.</p>
       <h2>Rücktrittsrecht</h2>
       <p>Als Verbraucher kannst du binnen 14 Tagen ab Vertragsabschluss ohne Angabe von Gründen zurücktreten, zum Beispiel über „Abo verwalten“ oder per E-Mail{SUPPORT_EMAIL ? ` an ${SUPPORT_EMAIL}` : ''}. Hast du verlangt, dass die Leistung schon vor Ablauf der Frist beginnt, zahlst du für die bis dahin erbrachte Leistung anteilig. Jobbster erstattet in diesem Fall im Zweifel den vollen Betrag.</p>
       <h2>Deine Pflichten</h2>

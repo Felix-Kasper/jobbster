@@ -596,7 +596,7 @@ section { position: relative; }
       <p class="lead" data-reveal style="--i:2">Etwas offen? Schreib uns über das Feld ganz unten.</p>
     </div>
     <div class="akkordeon" data-reveal style="--i:1">
-      <details open><summary>Wie viele Bewerbungen pro Tag sind sinnvoll?<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></summary><p class="antwort">Du stellst selbst ein, wie viele Treffer Jobbster jeden Morgen sucht, zwischen 1 und 12. Empfohlen sind 10: genug für echte Chancen und wenig genug, dass du jede vor dem Absenden in Ruhe liest.</p></details>
+      <details open><summary>Wie viele Bewerbungen pro Tag sind sinnvoll?<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></summary><p class="antwort">Du stellst selbst ein, wie viele Treffer Jobbster jeden Morgen sucht, zwischen 1 und 12, in der Gratis-Probe bis zu 6. Empfohlen sind 10: genug für echte Chancen und wenig genug, dass du jede vor dem Absenden in Ruhe liest.</p></details>
       <details><summary>Bewirbt sich Jobbster automatisch für mich?<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></summary><p class="antwort">Nein. Jobbster loggt sich nirgends ein und sendet nie etwas ab. Du liest jeden Entwurf, änderst ihn und schickst ihn selbst, per E-Mail oder über das Portal der Firma.</p></details>
       <details><summary>Was passiert mit meinem Lebenslauf?<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></summary><p class="antwort">Er wird in Frankfurt gespeichert. Für Suche und Entwurf geht der Text an die Claude API von Anthropic in den USA. Laut Anthropic werden API-Daten standardmäßig nicht zum Training verwendet. Ein Knopf im Konto löscht dein Konto mit allen Daten.</p></details>
       <details><summary>Klingen KI-Anschreiben nicht alle gleich?<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></summary><p class="antwort">Das passiert, wenn eine KI raten muss. Jobbster schreibt nur mit Fakten aus deinem Lebenslauf, sucht für jede Firma einen konkreten Grund und hält sich an eine Seite.</p></details>
@@ -695,13 +695,13 @@ section { position: relative; }
       <div class="kopf-abschnitt" style="margin-bottom:0">
         <span class="marker" data-reveal>Gratis testen</span>
         <h2 id="start-titel" data-reveal style="--i:1">Dein erster Tag fängt hier an.</h2>
-        <p class="lead" data-reveal style="--i:2">Gerade läuft die Beta. Frag deinen Zugang an oder schreib uns, was dir fehlt. Wir lesen jede Nachricht.</p>
+        <p class="lead" data-reveal style="--i:2">Trag deine E-Mail-Adresse ein, dann legst du sofort dein Konto an. 7 Tage gratis, bis zu 6 Bewerbungen am Tag, ohne Karte.</p>
       </div>
       <form id="anfrage" class="karte formular" data-reveal style="--i:2" novalidate>
         <div class="feld"><label for="f-mail">E-Mail-Adresse</label><input id="f-mail" name="email" type="email" autocomplete="email" inputmode="email" placeholder="du@beispiel.at" required></div>
         <div class="feld"><label for="f-text">Was suchst du? Oder dein Feedback (optional)</label><textarea id="f-text" name="text" maxlength="460" rows="3" placeholder="Trainee Consulting in München, ab März"></textarea></div>
         <div class="falle" aria-hidden="true"><label for="f-web">Website</label><input id="f-web" name="website" type="text" tabindex="-1" autocomplete="off"></div>
-        <div class="haken"><input id="f-ok" name="consent" type="checkbox" required><label for="f-ok">Ich bin einverstanden, dass Jobbster meine E-Mail-Adresse und meine Nachricht speichert, um mir den Zugang zu schicken oder zu antworten.</label></div>
+        <div class="haken"><input id="f-ok" name="consent" type="checkbox" required><label for="f-ok">Ich bin einverstanden, dass Jobbster meine E-Mail-Adresse und meine Nachricht speichert, um mir den Zugang zu geben oder zu antworten.</label></div>
         <button class="btn" type="submit">Gratis testen</button>
         <p class="meldung" id="f-meldung" role="status" aria-live="polite"></p>
       </form>
@@ -895,9 +895,17 @@ section { position: relative; }
     b.disabled = true; sag('Wird gesendet …');
     var text = form.text.value.trim();
     fetch(ENDPUNKT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: mail, consent: true, source: 'landing', note: text.slice(0, 480) || null, website: form.website.value }) })
-      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok && j.ok, grund: j.grund }; }); })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok && j.ok, grund: j.grund, code: j.code, konto: j.konto }; }); })
       .then(function (r) {
-        if (r.ok) { sag('Du stehst auf der Liste. Deinen Einladungscode schicken wir dir persönlich per E-Mail, meist innerhalb eines Tages. Mit dem Code legst du dein Konto an.', 'gut'); form.email.value = ''; form.text.value = ''; }
+        if (r.ok && r.code) {
+          // Weiter zur Anmeldung: Code in der Adresse, die E-Mail nur im Speicher dieses Tabs (nicht in der Adresse)
+          try { sessionStorage.setItem('jobbster-anmeldung', JSON.stringify({ email: mail, code: r.code })); } catch (e) {}
+          sag('Geschafft. Du wirst zur Anmeldung weitergeleitet …', 'gut');
+          location.href = 'app/registrieren?code=' + encodeURIComponent(r.code);
+          return;
+        }
+        if (r.ok && r.konto) { sag('Mit dieser Adresse gibt es schon ein Konto. Du wirst zur Anmeldung weitergeleitet …', 'gut'); location.href = 'app/anmelden'; return; }
+        if (r.ok) { sag('Du stehst auf der Liste. Gerade sind alle Gratis-Plätze für heute vergeben. Deinen Code schicken wir dir persönlich per E-Mail, meist innerhalb eines Tages.', 'gut'); form.email.value = ''; form.text.value = ''; }
         else if (r.grund === 'email') sag('Bitte prüfe die E-Mail-Adresse.', 'schlecht');
         else if (r.grund === 'spaeter') sag('Gerade fragen sehr viele an. Bitte versuch es in einer Stunde noch einmal.', 'schlecht');
         else sag('Das hat nicht geklappt. Bitte versuch es später noch einmal.', 'schlecht');
